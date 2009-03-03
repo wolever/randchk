@@ -1,0 +1,2 @@
+randchk will walk two directory structures in parallel, randomly checksumming
+files to ensure their integrity.
