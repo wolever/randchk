@@ -1,9 +1,11 @@
-#!/usr/bin/env python2.5
+#!/usr/bin/env python
+# Sorry, Python >= 2.5 only
 from __future__ import with_statement
 
-from os import listdir, path, stat
+import os
+from sys import exit
 from optparse import OptionParser
-from random import randint
+from random import randint, random
 from hashlib import md5
 
 class randlist(list):
@@ -16,33 +18,48 @@ class randlist(list):
 
 def assert_dir(f):
     """ Assert that 'f' is a directory. """
-    assert path.isdir(f), "%r is not a directory!" %(f)
+    assert os.path.isdir(f), "%r is not a directory!" %(f)
 
 def joinmany(dir, files):
     """ Join one directory to many files.
         >>> joinmany("/tmp/", ['a', 'b'])
         ['/tmp/a', '/tmp/b']
         >>> """
-    return [ path.join(dir, file) for file in files ]
+    return [ os.path.join(dir, file) for file in files ]
 
-def randomly_walk_files(dir):
-    """ Recursively yield all the files in 'dir', randomly ordering them. """
-    # XXX: Doesn't check for things like cyclic symlinks
-    files = randlist(joinmany(dir, listdir(dir)))
-    for file in files:
-        if path.isdir(file):
-            files.extend(joinmany(file, listdir(file)))
-            continue
-        yield file
+class random_file_walker(object):
+    def __init__(self, dir):
+        self.dir = dir
+        # The number of files we've seen
+        self.files = 0
+        # The number of directories we've seen
+        self.dirs = 0
+
+    def __iter__(self):
+        """ Recursively yield all the files in 'dir', randomly ordering them. """
+        # XXX: Doesn't check for things like cyclic symlinks
+        files = randlist(joinmany(self.dir, os.listdir(self.dir)))
+        for file in files:
+            if os.path.isdir(file):
+                self.dirs += 1
+                files.extend(joinmany(file, os.listdir(file)))
+                continue
+            self.files += 1
+            yield file
 
 def switchprefix(old, new, path):
     """ Switch the prefix of "path" from "old" to "new". """
     assert path.startswith(old)
     return new + path[len(old):]
 
+def file_is_symlink(file):
+    """ Symlinks, especially broken ones, cause lots of problems.
+        Ignore them for now. """
+    return S_ISLNK(os.stat(file).st_mode)
+
 def file_size(file):
     """ Get a file's size. """
-    return stat(file).st_size
+    return os.stat(file).st_size
 
 def file_checksum(file):
     """ Checksum a file. """
@@ -94,10 +111,11 @@ def check_directories(dirs):
         the files in dirs[1:].  Triples of (canonical file path, problem file path,
         problem description) are yielded. """
     map(assert_dir, dirs)
-    dirs = map(path.normpath, dirs)
+    dirs = map(os.path.normpath, dirs)
     source_dir = dirs[0]
     dest_dirs = dirs[1:]
-    for source in randomly_walk_files(source_dir):
+    walker = random_file_walker(source_dir)
+    for source in walker:
         dests = [switchprefix(source_dir, dest_dir, source) for dest_dir in dest_dirs]
         problems = compare_files(source, *dests)
         for (problem_file, problem_description) in problems:
@@ -112,6 +130,10 @@ if __name__ == '__main__':
     #parser.add_option("-1", "--first-1024", action="store_true", dest="first1024",
     #                  help="Only check the first 1024 bytes of each file.")
     (options, args) = parser.parse_args()
-    assert len(args) == 2
+
+    if len(args) != 2:
+        parser.print_help()
+        exit(1)
+
     for (canonical_file, problem_file, description) in check_directories(args):
         print "%s: %s (%s)" %(problem_file, description, canonical_file)

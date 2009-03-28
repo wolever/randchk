@@ -33,10 +33,10 @@ def test_assert_dir():
     assert_dir('.')
     assert_raises(AssertionError, assert_dir, __file__)
 
-def test_randomly_walk_files():
+def test_random_file_walker():
     testdir = helper_dir("randomly_walk_files_helper")
     expected = set(sanewalk(testdir))
-    actual = set(randomly_walk_files(testdir))
+    actual = set(random_file_walker(testdir))
     assert_equal(expected, actual)
 
 def test_switchprefix():
