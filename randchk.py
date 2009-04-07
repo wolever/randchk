@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 # Sorry, Python >= 2.5 only
 from __future__ import with_statement
+from __future__ import division
 
 import os
+import progressbar as pb
 from sys import exit
 from optparse import OptionParser
 from random import randint, random
@@ -25,26 +27,43 @@ def joinmany(dir, files):
         >>> joinmany("/tmp/", ['a', 'b'])
         ['/tmp/a', '/tmp/b']
         >>> """
-    return [ os.path.join(dir, file) for file in files ]
+    return ( os.path.join(dir, file) for file in files )
 
 class random_file_walker(object):
-    def __init__(self, dir):
+    def __init__(self, dir, show_progress=False):
         self.dir = dir
-        # The number of files we've seen
-        self.files = 0
-        # The number of directories we've seen
-        self.dirs = 0
+        self.file_count = 0
+        self.dir_count = 0
+        self.files = randlist(joinmany(self.dir, os.listdir(self.dir)))
+
+        if (show_progress):
+            # The pretty progress bar.  The ETA is almost certainly a lie.
+            p = pb.ProgressBar(widgets=['Checked:', pb.Percentage(), ' ',
+                                    pb.Bar(marker='=', left='[', right=']'),
+                                    ' ', pb.ETA()],
+                                maxval=1)
+            self.progress_bar = p
+        else:
+            self.progress_bar = None
+
+    def update_progress(self):
+        if (self.progress_bar):
+            seen = self.dir_count + self.file_count
+            file_to_dir_ratio = 1 / (self.dir_count / seen) # yay real division
+            approx_left = file_to_dir_ratio * len(this.files)
+            guess = seen + approx_left
+            self.progress_bar.maxval = guess
+            self.progress_bar.update(seen)
 
     def __iter__(self):
         """ Recursively yield all the files in 'dir', randomly ordering them. """
         # XXX: Doesn't check for things like cyclic symlinks
-        files = randlist(joinmany(self.dir, os.listdir(self.dir)))
-        for file in files:
+        for file in self.files:
             if os.path.isdir(file):
-                self.dirs += 1
-                files.extend(joinmany(file, os.listdir(file)))
+                self.dir_count += 1
+                self.files.extend(joinmany(file, os.listdir(file)))
                 continue
-            self.files += 1
+            self.file_count += 1
             yield file
 
 def switchprefix(old, new, path):
@@ -110,13 +129,17 @@ def check_directories(dirs):
     """ Randomly walk over the "canonical" files in dirs[0], comparing them to
         the files in dirs[1:].  Triples of (canonical file path, problem file path,
         problem description) are yielded. """
+    # Make sure that everything we've been passed is, in fact, a directory
     map(assert_dir, dirs)
+
     dirs = map(os.path.normpath, dirs)
     source_dir = dirs[0]
     dest_dirs = dirs[1:]
+
     walker = random_file_walker(source_dir)
     for source in walker:
-        dests = [switchprefix(source_dir, dest_dir, source) for dest_dir in dest_dirs]
+        dests = ( switchprefix(source_dir, dest_dir, source)
+                  for dest_dir in dest_dirs )
         problems = compare_files(source, *dests)
         for (problem_file, problem_description) in problems:
             yield source, problem_file, problem_description
