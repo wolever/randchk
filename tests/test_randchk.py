@@ -28,6 +28,15 @@ def test_randlist():
             rl.append(3)
     assert_equal(actual, set([1,2,3]))
 
+def test_index_of_uniqe_element():
+    tests = (
+        ([1], None),
+        ([1, 1], None),
+        ([1, 2], 1),
+        ([2, 1], 1))
+    for (input, expected) in tests:
+        actual = index_of_uniqe_element(input)
+        assert_equal(actual, expected)
 
 def test_assert_dir():
     assert_dir('.')

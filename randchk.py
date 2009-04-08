@@ -74,56 +74,77 @@ def switchprefix(old, new, path):
 def file_is_symlink(file):
     """ Symlinks, especially broken ones, cause lots of problems.
         Ignore them for now. """
-    return S_ISLNK(os.stat(file).st_mode)
+    return os.path.islink(file)
 
 def file_size(file):
     """ Get a file's size. """
     return os.stat(file).st_size
 
-def file_checksum(file):
-    """ Checksum a file. """
+def file_summer(file):
     with open(file) as f:
         sum = md5()
-        d = f.read(1024)
-        while d:
-            sum.update(d)
-            d = f.read(1024)
-        return sum.hexdigest()
+        data = f.read(1024)
+        while data:
+            sum.update(data)
+            yield sum.hexdigest()
+            data = f.read(1024)
+
+def index_of_uniqe_element(elements):
+    """ If 'i' contains an element which is not the same as the rest, return
+        its index or None.
+        index_of_uniqe_element([]) is undefined.
+        >>> index_of_uniqe_element(["a"])
+        None
+        >>> index_of_uniqe_element(["a", "a"])
+        None
+        >>> index_of_uniqe_element(["a", "x"])
+        1
+        >>> """
+    first_element = None
+    for (id, element) in enumerate(elements):
+        if first_element is None:
+            first_element = element
+
+        if element != first_element:
+            return id
+    return None
+
+
+def _compare_files(*files):
+    if file_is_symlink(files[0]):
+        return None
+
+    expected_size = file_size(files[0])
+    for file in files[1:]:
+        size = file_size(file)
+        if size != expected_size:
+            return (file, "file_size %s != %s" %(size, expected_size))
+
+    # Checksum the files
+    error = None
+    sums = [ file_summer(f) for f in files ]
+    while error is None:
+        try:
+            these_sums = [ sum.next() for sum in sums ]
+        except StopIteration, e:
+            break
+
+        unique = index_of_uniqe_element(these_sums)
+        if unique is not None:
+            error = (files[unique], "bad_checksum")
+
+    return error
+
 
 def compare_files(*files):
     """ Compare a list of files, assuming that the first is considered
-        "canonical" (that is, each file will be compared against the first).  A
-        list of (file name, error description) tuples is reurned. """
+        "canonical" (that is, each file will be compared against the first).
+        A (file name, error description) tuple or None is reurned. """
 
-    # A list of checks that will be performed.
-    # If any check fails, no further checks are processed.
-    # (this does have shortcomings, but it will do for now)
-    for check in (file_size, file_checksum):
-        problems = []
-
-        # Check the "canonical" file.
-        # Let any exceptions which happen here bubble up.
-        canonical = check(files[0])
-
-        # Check each individual file
-        for file in files[1:]:
-            problem = None
-            try:
-                result = check(file) 
-                if canonical != result:
-                    problem = "%s %s (expected) != %s (actual)" \
-                               %(check.__name__, canonical, result)
-            except EnvironmentError, e:
-                problem = e.strerror
-
-            if problem:
-                problems.append((file, problem))
-                problem = None
-
-        if problems:
-            return problems
-
-    return []
+    try:
+        return _compare_files(*files)
+    except EnvironmentError, e:
+        return (e.filename, "env_error %s" %(e.strerror))
 
 def check_directories(dirs):
     """ Randomly walk over the "canonical" files in dirs[0], comparing them to
@@ -140,8 +161,9 @@ def check_directories(dirs):
     for source in walker:
         dests = ( switchprefix(source_dir, dest_dir, source)
                   for dest_dir in dest_dirs )
-        problems = compare_files(source, *dests)
-        for (problem_file, problem_description) in problems:
+        error = compare_files(source, *dests)
+        if error is not None:
+            (problem_file, problem_description) = error
             yield source, problem_file, problem_description
 
 if __name__ == '__main__':
