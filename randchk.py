@@ -29,14 +29,13 @@ def joinmany(dir, files):
         >>> """
     return ( os.path.join(dir, file) for file in files )
 
-class random_file_walker(object):
-    def __init__(self, dir, show_progress=False):
+class file_walker(object):
+    def __init__(self, dir):
         self.dir = dir
         self.file_count = 0
         self.dir_count = 0
-        self.files = randlist(joinmany(self.dir, os.listdir(self.dir)))
 
-        if (show_progress):
+        if (options["show_progress"]):
             # The pretty progress bar.  The ETA is almost certainly a lie.
             p = pb.ProgressBar(widgets=['Checked:', pb.Percentage(), ' ',
                                     pb.Bar(marker='=', left='[', right=']'),
@@ -46,16 +45,32 @@ class random_file_walker(object):
         else:
             self.progress_bar = None
 
+        self._init_()
+
     def update_progress(self):
-        if (self.progress_bar):
-            seen = self.dir_count + self.file_count
-            file_to_dir_ratio = 1 / (self.dir_count / seen) # yay real division
-            approx_left = file_to_dir_ratio * len(this.files)
-            guess = seen + approx_left
-            self.progress_bar.maxval = guess
-            self.progress_bar.update(seen)
+        if self.progress_bar is None:
+            return
+
+        # Approximate the number of files left, given the average number of
+        # files in each directory seen so far and the average file to directory
+        # ratio.
+        seen = self.dir_count + self.file_count
+        file_to_dir_ratio =  seen / self.dir_count # yay real division
+        approx_left = file_to_dir_ratio * len(self.files)
+        guess = seen + approx_left
+        self.progress_bar.maxval = guess
+        self.progress_bar.update(seen)
 
     def __iter__(self):
+        for file in self._iter_():
+            self.update_progress()
+            yield file
+
+class random_file_walker(file_walker):
+    def _init_(self):
+        self.files = randlist(joinmany(self.dir, os.listdir(self.dir)))
+
+    def _iter_(self):
         """ Recursively yield all the files in 'dir', randomly ordering them. """
         # XXX: Doesn't check for things like cyclic symlinks
         for file in self.files:
@@ -109,7 +124,6 @@ def index_of_uniqe_element(elements):
             return id
     return None
 
-
 def _compare_files(*files):
     if file_is_symlink(files[0]):
         return None
@@ -132,6 +146,9 @@ def _compare_files(*files):
         unique = index_of_uniqe_element(these_sums)
         if unique is not None:
             error = (files[unique], "bad_checksum")
+
+        if options["first1024"]:
+            break
 
     return error
 
@@ -166,15 +183,36 @@ def check_directories(dirs):
             (problem_file, problem_description) = error
             yield source, problem_file, problem_description
 
-if __name__ == '__main__':
+ordered_options = (
+#   (name, default, short, long, help)
+    ("first1024", False, "-1", "--first-1024",
+        "Only check the first 1024 bytes of each file."),
+    ("show_progress", False, "-p", "--progress",
+        "Show a progress bar."),
+)
+
+options = dict((option, default) for
+               (option, default, _, _, _) in ordered_options)
+
+def parse_args():
     # Parse the command line arguments
     parser = OptionParser(usage = "usage: %prog [options] CANONICAL CHECK...\n"
         "\tRandomly checksum files in CANONICAL, comparing them to the same\n"
         "\tfile in each CHECK ensuring that they are the same.")
+
+    for (name, _, short, long, help) in ordered_options:
+        parser.add_option(short, long, action="store_true",
+                          dest=name, help=help)
         
-    #parser.add_option("-1", "--first-1024", action="store_true", dest="first1024",
-    #                  help="Only check the first 1024 bytes of each file.")
-    (options, args) = parser.parse_args()
+    (parsed_options, args) = parser.parse_args()
+
+    for option in options:
+        options[option] = getattr(parsed_options, option)
+
+    return parser
+
+if __name__ == "__main__":
+    parser = parse_args()
 
     if len(args) != 2:
         parser.print_help()

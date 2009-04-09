@@ -69,33 +69,54 @@ def run_directory_test(directory):
     #     Problem: path/to/problem/file, pattern in the description
     def parse_problem(line):
         """ Parse a "problem" line, returning (file, pattern). """
-        assert line.startswith("Problem:")
-        parts = [part.strip() for part in line[len("Problem:"):].split(",")]
+        parts = [part.strip() for part in line.split(",")]
         assert len(parts) == len(filter(None, parts)), \
                "Invalid 'Problem:' line: " + line
         return parts
 
-    expected_problems = [parse_problem(line) for line in readme.splitlines()
-                         if line.startswith("Problem:")]
-   
+    def parse_options(line):
+        """ Parse an "options" line, returning nothing. """
+        import sys
+        old_argv = sys.argv
+        sys.argv = [old_argv[0]] + line.split()
+        parse_args()
+        sys.argv = old_argv
+
+    expected_problems = []
+    for line in readme.splitlines():
+        line = line.split(": ", 1)
+        if len(line) != 2:
+            continue
+
+        (header, rest) = line
+        if header == "Problem":
+            expected_problems.append(parse_problem(rest))
+        elif header == "Options":
+            parse_options(rest)
+
     # These are the directories which will be passed to check_directories.
     # They are ordered alphanumerically, so let's hope the "canonical"
     # directory is first.
     test_directories = sorted(glob(path.join(directory, "*/")))
-    problems = list(check_directories(test_directories))
+    actual_problems = list(check_directories(test_directories))
 
-    for (_, problem_file, problem_description) in problems:
+    for (_, problem_file, problem_description) in actual_problems:
         found = False
         for (eid, (e_file, e_description)) in enumerate(expected_problems):
             # We only check that the problem file *ends* with the expeced file
             # (makes life a bit easier, I think) 
             if not problem_file.endswith(e_file): continue
-            found = True
             assert e_description in problem_description, \
                    "Expected description, %r, not in actual description, %r." \
                     %(e_description, problem_description)
             expected_problems.pop(eid)
+            found = True
             break
 
         assert found, "Unexpected problem encountered: %s: %s" \
                       %(problem_file, problem_description)
+
+    # By now the expected_problems list should be empty
+    assert expected_problems == [], \
+           ("Expected problem(s) not encountered: " +
+            ", ".join(desc for (_, desc) in expected_problems))

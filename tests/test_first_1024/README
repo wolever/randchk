@@ -1,0 +1,4 @@
+Two files who's first 1024 bytes are the same, but differ after that.  When the
+--first-1024 option is on, these files should not raise any errors.
+
+Options: --first-1024
