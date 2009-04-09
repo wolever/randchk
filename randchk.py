@@ -37,7 +37,7 @@ class file_walker(object):
 
         if (options["show_progress"]):
             # The pretty progress bar.  The ETA is almost certainly a lie.
-            p = pb.ProgressBar(widgets=['Checked:', pb.Percentage(), ' ',
+            p = pb.ProgressBar(widgets=['Checked: ', pb.Percentage(), ' ',
                                     pb.Bar(marker='=', left='[', right=']'),
                                     ' ', pb.ETA()],
                                 maxval=1)
@@ -55,7 +55,9 @@ class file_walker(object):
         # files in each directory seen so far and the average file to directory
         # ratio.
         seen = self.dir_count + self.file_count
-        file_to_dir_ratio =  seen / self.dir_count # yay real division
+        # Remember, we have real division!
+        # Also, the (... or 1) is to prevent the initial division by zero error.
+        file_to_dir_ratio =  seen / (self.dir_count or 1)
         approx_left = file_to_dir_ratio * len(self.files)
         guess = seen + approx_left
         self.progress_bar.maxval = guess
@@ -209,10 +211,10 @@ def parse_args():
     for option in options:
         options[option] = getattr(parsed_options, option)
 
-    return parser
+    return (parser, args)
 
 if __name__ == "__main__":
-    parser = parse_args()
+    (parser, args) = parse_args()
 
     if len(args) != 2:
         parser.print_help()
