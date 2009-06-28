@@ -67,19 +67,19 @@ def run_directory_test(directory):
     # Problem descriptions have two parts: a file name and a pattern which
     # should be part of the description.  They look like this:
     #     Problem: path/to/problem/file, pattern in the description
-    def parse_problem(line):
+    def do_problem(line):
         """ Parse a "problem" line, returning (file, pattern). """
         parts = [part.strip() for part in line.split(",")]
         assert len(parts) == len(filter(None, parts)), \
                "Invalid 'Problem:' line: " + line
         return parts
 
-    def parse_options(line):
+    def do_options(line):
         """ Parse an "options" line, returning nothing. """
         import sys
         old_argv = sys.argv
-        sys.argv = [old_argv[0]] + line.split()
-        parse_args()
+        sys.argv = [ old_argv[0] ] + line.split()
+        parse_options()
         sys.argv = old_argv
 
     expected_problems = []
@@ -90,9 +90,9 @@ def run_directory_test(directory):
 
         (header, rest) = line
         if header == "Problem":
-            expected_problems.append(parse_problem(rest))
+            expected_problems.append(do_problem(rest))
         elif header == "Options":
-            parse_options(rest)
+            do_options(rest)
 
     # These are the directories which will be passed to check_directories.
     # They are ordered alphanumerically, so let's hope the "canonical"

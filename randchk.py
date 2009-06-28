@@ -5,9 +5,9 @@ from __future__ import division
 
 import os
 import progressbar as pb
-from sys import exit
+import sys
 from optparse import OptionParser
-from random import randint, random
+from random import randint
 from hashlib import md5
 
 class randlist(list):
@@ -22,18 +22,19 @@ def assert_dir(f):
     """ Assert that 'f' is a directory. """
     assert os.path.isdir(f), "%r is not a directory!" %(f)
 
-def joinmany(dir, files):
+def joinmany(dirname, files):
     """ Join one directory to many files.
         >>> joinmany("/tmp/", ['a', 'b'])
         ['/tmp/a', '/tmp/b']
         >>> """
-    return ( os.path.join(dir, file) for file in files )
+    return ( os.path.join(dirname, file) for file in files )
 
 class file_walker(object):
-    def __init__(self, dir):
-        self.dir = dir
+    def __init__(self, dirname):
+        self.dirname = dirname
         self.file_count = 0
         self.dir_count = 0
+        self.files = None
 
         if (options["show_progress"]):
             # The pretty progress bar.  The ETA is almost certainly a lie.
@@ -68,12 +69,19 @@ class file_walker(object):
             self.update_progress()
             yield file
 
-class random_file_walker(file_walker):
     def _init_(self):
-        self.files = randlist(joinmany(self.dir, os.listdir(self.dir)))
+        raise Exception("_init_ needs to be implemented by subclasses.")
 
     def _iter_(self):
-        """ Recursively yield all the files in 'dir', randomly ordering them. """
+        raise Exception("_iter_ needs to be implemented by subclasses.")
+
+class random_file_walker(file_walker):
+    def _init_(self):
+        self.files = randlist(joinmany(self.dirname, os.listdir(self.dirname)))
+
+    def _iter_(self):
+        """ Recursively yield all the files in 'dirname', randomly ordering
+            them. """
         # XXX: Doesn't check for things like cyclic symlinks
         for file in self.files:
             if os.path.isdir(file):
@@ -196,7 +204,7 @@ ordered_options = (
 options = dict((option, default) for
                (option, default, _, _, _) in ordered_options)
 
-def parse_args():
+def parse_options():
     # Parse the command line arguments
     parser = OptionParser(usage = "usage: %prog [options] CANONICAL CHECK...\n"
         "\tRandomly checksum files in CANONICAL, comparing them to the same\n"
@@ -214,11 +222,11 @@ def parse_args():
     return (parser, args)
 
 if __name__ == "__main__":
-    (parser, args) = parse_args()
+    (parser, args) = parse_options()
 
     if len(args) != 2:
         parser.print_help()
-        exit(1)
+        sys.exit(1)
 
     for (canonical_file, problem_file, description) in check_directories(args):
         print "%s: %s (%s)" %(problem_file, description, canonical_file)
