@@ -1,2 +1,21 @@
 randchk will walk two directory structures in parallel, randomly checksumming
 files to ensure their integrity.
+
+It is designed to be used in situations where there may not be time to checksum
+every file (either during or after a backup), but some confidence in backup
+integrity is desired.
+
+The algorithm is:
+
+    files_to_check = list_directory(base_directory)
+    while files_to_check:
+        file = files_to_check.pop()
+        if file is a directory:
+            files_to_check = randomize(files_to_check + list_directory(file))
+        else:
+            check_file(file, file.replace(base_directory, backup_directory))
+
+Nitpickers: yes, it's true, this algorithm is biased towards files high-up in
+the hierarchy. The only way to remove this bias, though, is to find all the
+files on the system, which would significantly increase the time between
+"starting randchk" and "checking files" - something I am trying to avoid.
