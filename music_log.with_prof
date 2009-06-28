@@ -1,0 +1,147 @@
+         35211824 function calls in 1097.016 CPU seconds
+
+   Ordered by: standard name
+
+ cumtime  percall  tottime  percall   ncalls  filename:lineno(function)
+                                    
+   0.000    0.000    0.000    0.000        1  <string>:1(<module>)
+   0.000    0.000    0.000    0.000        1  UserDict.py:44(has_key)
+   0.000    0.000    0.000    0.000        1  UserDict.py:57(get)
+   0.000    0.000    0.000    0.000        1  __future__.py:48(<module>)
+   0.000    0.000    0.000    0.000        1  __future__.py:70(_Feature)
+   0.000    0.000    0.000    0.000        1  __init__.py:48(normalize_encoding)
+   0.000    0.000    0.000    0.000        1  gettext.py:421(find)
+   0.000    0.000    0.000    0.000        1  gettext.py:461(translation)
+   0.000    0.000    0.000    0.000        1  gettext.py:527(dgettext)
+   0.000    0.000    0.000    0.000        1  gettext.py:565(gettext)
+   0.000    0.000    0.000    0.000        1  optparse.py:1001(add_option)
+   0.000    0.000    0.000    0.000        1  optparse.py:1179(__init__)
+   0.000    0.000    0.000    0.000        1  optparse.py:1231(_create_option_list)
+   0.000    0.000    0.000    0.000        1  optparse.py:1236(_add_help_option)
+   0.000    0.000    0.000    0.000        1  optparse.py:1246(_populate_option_list)
+   0.000    0.000    0.000    0.000        1  optparse.py:1256(_init_parsing_state)
+   0.000    0.000    0.000    0.000        1  optparse.py:1265(set_usage)
+   0.000    0.000    0.000    0.000        1  optparse.py:1291(_get_all_options)
+   0.000    0.000    0.000    0.000        1  optparse.py:1297(get_default_values)
+   0.000    0.000    0.000    0.000        1  optparse.py:1340(_get_args)
+   0.000    0.000    0.000    0.000        1  optparse.py:1346(parse_args)
+   0.000    0.000    0.000    0.000        1  optparse.py:1385(check_values)
+   0.000    0.000    0.000    0.000        1  optparse.py:1398(_process_args)
+   0.000    0.000    0.000    0.000        1  optparse.py:194(__init__)
+   0.000    0.000    0.000    0.000        1  optparse.py:218(set_parser)
+   0.000    0.000    0.000    0.000        1  optparse.py:359(__init__)
+   0.000    0.000    0.000    0.000        1  optparse.py:554(__init__)
+   0.000    0.000    0.000    0.000        1  optparse.py:573(_check_opt_strings)
+   0.000    0.000    0.000    0.000        1  optparse.py:582(_set_opt_strings)
+   0.000    0.000    0.000    0.000        1  optparse.py:603(_set_attrs)
+   0.000    0.000    0.000    0.000        1  optparse.py:623(_check_action)
+   0.000    0.000    0.000    0.000        1  optparse.py:629(_check_type)
+   0.000    0.000    0.000    0.000        1  optparse.py:659(_check_choice)
+   0.000    0.000    0.000    0.000        1  optparse.py:672(_check_dest)
+   0.000    0.000    0.000    0.000        1  optparse.py:687(_check_const)
+   0.000    0.000    0.000    0.000        1  optparse.py:693(_check_nargs)
+   0.000    0.000    0.000    0.000        1  optparse.py:702(_check_callback)
+   0.000    0.000    0.000    0.000        1  optparse.py:826(isbasestring)
+   0.000    0.000    0.000    0.000        1  optparse.py:831(__init__)
+   0.000    0.000    0.000    0.000        1  optparse.py:926(__init__)
+   0.000    0.000    0.000    0.000        1  optparse.py:937(_create_option_mappings)
+   0.000    0.000    0.000    0.000        1  optparse.py:953(set_conflict_handler)
+   0.000    0.000    0.000    0.000        1  optparse.py:958(set_description)
+   0.000    0.000    0.000    0.000        1  optparse.py:974(_check_conflict)
+   0.000    0.000    0.000    0.000        1  os.py:724(urandom)
+   0.000    0.000    0.000    0.000        1  progressbar.py:104(ETA)
+   0.000    0.000    0.000    0.000        1  progressbar.py:118(FileTransferSpeed)
+   0.000    0.000    0.000    0.000        1  progressbar.py:135(RotatingMarker)
+   0.000    0.000    0.000    0.000        1  progressbar.py:146(Percentage)
+   0.000    0.000    0.000    0.000        1  progressbar.py:151(Bar)
+   0.000    0.000    0.000    0.000        1  progressbar.py:153(__init__)
+   0.000    0.000    0.000    0.000        1  progressbar.py:170(ReverseBar)
+   0.000    0.000    0.000    0.000        1  progressbar.py:181(ProgressBar)
+   0.000    0.000    0.000    0.000        1  progressbar.py:66(ProgressBarWidget)
+   0.000    0.000    0.000    0.000        1  progressbar.py:83(ProgressBarWidgetHFill)
+   0.000    0.000    0.000    0.000        1  randchk.py:13(randlist)
+   0.000    0.000    0.000    0.000        1  randchk.py:32(random_file_walker)
+   0.000    0.000    0.000    0.000        1  random.py:609(WichmannHill)
+   0.000    0.000    0.000    0.000        1  random.py:69(Random)
+   0.000    0.000    0.000    0.000        1  random.py:759(SystemRandom)
+   0.000    0.000    0.000    0.000        1  random.py:88(__init__)
+   0.000    0.000    0.000    0.000        1  random.py:97(seed)
+   0.000    0.000    0.000    0.000        1  {_hashlib.openssl_sha1}
+   0.000    0.000    0.000    0.000        1  {_hashlib.openssl_sha224}
+   0.000    0.000    0.000    0.000        1  {_hashlib.openssl_sha256}
+   0.000    0.000    0.000    0.000        1  {_hashlib.openssl_sha384}
+   0.000    0.000    0.000    0.000        1  {_hashlib.openssl_sha512}
+   0.000    0.000    0.000    0.000        1  {binascii.hexlify}
+   0.000    0.000    0.000    0.000        1  {dir}
+   0.000    0.000    0.000    0.000        1  {function seed at 0x2910f0}
+   0.000    0.000    0.000    0.000        1  {hasattr}
+   0.000    0.000    0.000    0.000        1  {math.exp}
+   0.000    0.000    0.000    0.000        1  {math.sqrt}
+   0.000    0.000    0.000    0.000        1  {method 'copy' of 'dict' objects}
+   0.000    0.000    0.000    0.000        1  {method 'disable' of '_lsprof.Profiler' objects}
+   0.000    0.000    0.000    0.000        1  {method 'translate' of 'str' objects}
+   0.000    0.000    0.000    0.000        1  {posix.close}
+   0.000    0.000    0.000    0.000        1  {posix.open}
+   0.000    0.000    0.000    0.000        1  {posix.read}
+   0.000    0.000    0.000    0.000        2  UserDict.py:17(__getitem__)
+   0.000    0.000    0.000    0.000        2  gettext.py:130(_expand_lang)
+   0.000    0.000    0.000    0.000        2  locale.py:279(normalize)
+   0.000    0.000    0.000    0.000        2  posixpath.py:373(normpath)
+   0.000    0.000    0.000    0.000        2  randchk.py:21(assert_dir)
+   0.000    0.000    0.000    0.000        2  {filter}
+   0.000    0.000    0.000    0.000        2  {isinstance}
+   0.000    0.000    0.000    0.000        2  {map}
+   0.000    0.000    0.000    0.000        2  {math.log}
+   0.000    0.000    0.000    0.000        2  {method 'reverse' of 'list' objects}
+   0.000    0.000    0.000    0.000        2  {range}
+   0.000    0.000    0.000    0.000        3  {method 'join' of 'str' objects}
+   0.000    0.000    0.000    0.000        3  {method 'lower' of 'str' objects}
+   0.000    0.000    0.000    0.000        4  posixpath.py:168(exists)
+   0.000    0.000    0.000    0.000        4  {method 'replace' of 'str' objects}
+   0.000    0.000    0.000    0.000        5  __future__.py:71(__init__)
+   0.000    0.000    0.000    0.000        6  {getattr}
+   0.000    0.000    0.000    0.000        6  {method 'find' of 'str' objects}
+   0.000    0.000    0.000    0.000        6  {method 'split' of 'str' objects}
+   0.000    0.000    0.000    0.000        9  {method 'get' of 'dict' objects}
+   0.000    0.000    0.000    0.000       10  hashlib.py:106(<lambda>)
+   0.000    0.000    0.000    0.000       12  {setattr}
+   0.000    0.000    0.000    0.000       15  {method 'has_key' of 'dict' objects}
+   0.001    0.000    0.001    0.000      713  {method 'append' of 'list' objects}
+   0.001    0.000    0.001    0.000     2888  {method 'endswith' of 'str' objects}
+   0.001    0.000    0.001    0.000     3254  {method '__enter__' of 'file' objects}
+   0.002    0.001    0.002    0.001        4  hashlib.py:55(__get_builtin_constructor)
+   0.002    0.002    0.000    0.000        1  randchk.py:33(__init__)
+   0.003    0.000    0.003    0.000     2876  {method 'random' of '_random.Random' objects}
+   0.003    0.000    0.003    0.000     2878  stat.py:29(S_IFMT)
+   0.003    0.003    0.003    0.003        1  random.py:39(<module>)
+   0.004    0.000    0.004    0.000     1168  randchk.py:25(joinmany)
+   0.004    0.000    0.004    0.000     7476  {len}
+   0.004    0.004    0.004    0.004        1  progressbar.py:40(<module>)
+   0.005    0.000    0.005    0.000     2876  {method 'pop' of 'list' objects}
+   0.005    0.000    0.005    0.000     4612  {method 'startswith' of 'str' objects}
+   0.007    0.000    0.007    0.000     3255  {_hashlib.openssl_md5}
+   0.008    0.000    0.005    0.000     2878  stat.py:45(S_ISDIR)
+   0.008    0.008    0.006    0.006        1  hashlib.py:52(<module>)
+   0.012    0.000    0.008    0.000     1709  randchk.py:69(switchprefix)
+   0.015    0.000    0.011    0.000     2880  posixpath.py:56(join)
+   0.016    0.000    0.004    0.000     3418  randchk.py:141(<genexpr>)
+   0.021    0.000    0.007    0.000     4044  randchk.py:30(<genexpr>)
+   0.022    0.000    0.022    0.000     3254  {method 'hexdigest' of '_hashlib.HASH' objects}
+   0.031    0.000    0.012    0.000     1167  {method 'extend' of 'list' objects}
+   0.031    0.000    0.028    0.000     2876  random.py:147(randrange)
+   0.041    0.000    0.011    0.000     2876  random.py:211(randint)
+   0.068    0.000    0.019    0.000     2877  randchk.py:14(__iter__)
+   0.115    0.000    0.009    0.000     3418  randchk.py:79(file_size)
+   0.126    0.000    0.126    0.000     3254  {open}
+   0.321    0.000    0.015    0.000     2878  posixpath.py:192(isdir)
+   0.405    0.000    0.405    0.000     6300  {posix.stat}
+   5.060    0.004    5.060    0.004     1168  {posix.listdir}
+   5.513    0.003    0.028    0.000     1710  randchk.py:58(__iter__)
+  70.602    0.000   70.602    0.000 17562010  {method 'update' of '_hashlib.HASH' objects}
+ 992.120    0.000  992.120    0.000 17565264  {method 'read' of 'file' objects}
+1091.248    0.335   28.371    0.009     3254  randchk.py:83(file_checksum)
+1091.419    0.639    0.055    0.000     1709  randchk.py:93(compare_files)
+1096.985    1.590    0.036    0.000      690  randchk.py:128(check_directories)
+1097.014 1097.014    0.012    0.012        1  randchk.py:3(<module>)
+1097.016 1097.016    0.002    0.002        1  {execfile}
+
