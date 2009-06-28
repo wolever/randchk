@@ -1,5 +1,6 @@
 # If this file is run through nose, .. will automatically be added to sys.path.
 from randchk import *
+import randchk
 
 from re import match
 from glob import glob
@@ -79,7 +80,9 @@ def run_directory_test(directory):
         import sys
         old_argv = sys.argv
         sys.argv = [ old_argv[0] ] + line.split()
-        parse_options()
+        (_, _, new_options) = parse_options()
+        randchk.options = default_options()
+        randchk.options.update(new_options)
         sys.argv = old_argv
 
     expected_problems = []

@@ -193,6 +193,10 @@ def check_directories(dirs):
             (problem_file, problem_description) = error
             yield source, problem_file, problem_description
 
+def default_options():
+    return dict((option, default) for
+                (option, default, _, _, _) in ordered_options)
+
 ordered_options = (
 #   (name, default, short, long, help)
     ("first1024", False, "-1", "--first-1024",
@@ -201,8 +205,7 @@ ordered_options = (
         "Show a progress bar."),
 )
 
-options = dict((option, default) for
-               (option, default, _, _, _) in ordered_options)
+options = default_options()
 
 def parse_options():
     # Parse the command line arguments
@@ -216,13 +219,19 @@ def parse_options():
         
     (parsed_options, args) = parser.parse_args()
 
-    for option in options:
-        options[option] = getattr(parsed_options, option)
+    new_options = {}
 
-    return (parser, args)
+    # Load the options which have been changed into new_options
+    for option, default_value in parser.defaults.items():
+        new_value = getattr(parsed_options, option)
+        if default_value != new_value:
+            new_options[option] = new_value
+
+    return (parser, args, new_options)
 
 if __name__ == "__main__":
-    (parser, args) = parse_options()
+    (parser, args, new_options) = parse_options()
+    options.update(new_options)
 
     if len(args) != 2:
         parser.print_help()
