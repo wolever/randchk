@@ -4,12 +4,18 @@ from __future__ import with_statement
 from randchk import assert_dir
 
 from hashlib import md5
+from types import GeneratorType
+from os import path
 
 import os
 import re
 import stat
 import shlex
 import sys
+
+def debug(msg):
+    return
+    sys.stderr.write("%d: %s\n" %(os.getpid(), msg))
 
 def shellquote(s):
     s = s.replace('"', r'\"') # Escape any single-quotes
@@ -21,18 +27,33 @@ def shellquote(s):
 def shellunquote(s):
     return shlex.split(s)
 
-def debug(msg):
-    sys.stderr.write("%d: %s\n" %(os.getpid(), msg))
+class SerializationError(Exception):
+    pass
 
-def serialize(obj):
-    if isinstance(obj, basestring):
+def unserialize(s):
+    lines = s.split("\n")
+    if len(lines) > 1:
+        return [ tuple(shellunquote(line)) for line in lines ]
+    else:
+        return tuple(shellunquote(lines[0]))
+
+def serialize(obj, recurse=None):
+    # Serialize a tuple which contains strings, or a list
+    # which contains tuples.
+    if isinstance(obj, GeneratorType) and recurse == None:
+        return serialize(list(obj))
+
+    elif isinstance(obj, list) and recurse == None:
+        return "\n".join(serialize(item, "list") for item in obj)
+
+    elif isinstance(obj, tuple) and recurse in (None, "list"):
+        return " ".join(serialize(item, "tuple") for item in obj)
+
+    if isinstance(obj, basestring) and recurse == "tuple":
         return shellquote(obj)
 
-    elif hasattr(obj, '__iter__'):
-        return " ".join(serialize(item) for item in obj)
-
     else:
-        raise Exception("Can't serialize %r" %(obj))
+        raise SerializationError("Can't serialize %r" %(obj))
 
 def checksum(file):
     with open(file) as f:
@@ -60,31 +81,35 @@ def file_type(path):
 class Slave(object):
     def __init__(self, root, instream=sys.stdin, outstream=sys.stdout):
         assert_dir(root)
-        self.root = os.path.normpath(root)
+        self.root = path.normpath(root)
 
         self.instream = instream
         self.outstream = outstream
 
 
-    def path(self, file):
-        file = os.path.normpath(file)
+    def path(self, *files):
         # path.join("/tmp", "/") == "/", not "/tmp/"
         # so we strip the leading "/" from everything:
         # path.join("/tmp", "") == "/tmp/"
-        file = file.lstrip("/")
-        return os.path.join(self.root, file)
+        files = [ path.normpath(file).lstrip("/") for file in files ]
+        return path.join(self.root, *files)
 
     def run(self):
         while True:
             debug("Waiting for input...")
-            line = self.instream.readline().strip().split(None, 1)
-            debug("Read: %r" %(line))
+            line = unserialize(self.instream.readline().strip())
+            debug("Read: %r" %(line, ))
 
             if not line:
                 debug("Empty read - going down.")
                 return
 
             (command, args) = (line[0], line[1:])
+            
+            if command == "bye":
+                debug("Got 'bye' - going down...")
+                return
+
             result = self.run_command(command, args)
             self.outstream.write(result + "\n\n")
             self.outstream.flush()
@@ -94,21 +119,20 @@ class Slave(object):
         try:
             result = getattr(self, command)(*args)
         except EnvironmentError, e:
-            result = "ERROR %s" %(e.strerror)
+            result = ("ERROR", e.filename, e.strerror)
         return serialize(result)
 
-
     def LISTDIR_command(self, directory):
-        directory = self.path(directory)
-        for name in os.listdir(directory):
-            name = os.path.join(directory, name)
-            yield file_type(name) + " " + name
+        for name in os.listdir(self.path(directory)):
+            yield ( file_type(self.path(directory, name)),
+                    path.join(directory, name) )
 
     def CHECKSUM_command(self, file):
-        return " ".join([ "checksum", checksum(self.path(file)), file ])
+        file = self.path(file)
+        return ("checksum", checksum(file))
 
     def HELLO_command(self):
-        return "hello"
+        return ("hello", )
 
 if __name__ == "__main__":
     debug("Child started")

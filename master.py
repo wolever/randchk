@@ -7,12 +7,16 @@ import atexit
 import sys
 import os
 
-from slave import Slave
+from slave import Slave, unserialize, serialize
+
+def debug(msg):
+    return
+    sys.stderr.write("%s\n" %(msg, ))
 
 class SlaveError(Exception):
-    def __init__(self, slave, message):
-        Exception.__init__(self, "ERROR: %r for %r (%s)"
-                                  %(message, slave.last_cmd, slave.pid))
+    def __init__(self, slave, file, message):
+        Exception.__init__(self, "ERROR: %s: %r for %r (%s)"
+                                  %(message, file, slave.last_cmd, slave.pid))
 
 class SlaveProxy(object):
     def __init__(self, instream=sys.stdin, outstream=sys.stdout, pid=-1):
@@ -23,51 +27,58 @@ class SlaveProxy(object):
         self.hello()
 
     def recv(self):
-        result = []
+        lines = []
         while True:
             line = self.instream.readline().strip()
-            print "%d> %s" %(self.pid, line)
+            debug("%d> %s" %(self.pid, line))
             if line == "": break
-            if line.startswith("ERROR"):
-                message = line.split(None, 1)[1]
-                raise SlaveError(self, message)
-            result.append(line)
+            lines.append(line)
+        result = unserialize("\n".join(lines))
+
+        # The result should always have a length of at least 1
+        if result[0] == "ERROR":
+            (_, file, message) = result
+            raise SlaveError(self, file, message)
+
         return result
 
     def recv_one(self):
         result = self.recv()
-        assert len(result) == 1
-        return result[0]
+        assert type(result) != list
+        return result
 
-    def send(self, command, *args):
-        to_send = "%s %s" %(command, " ".join(args))
-        print "%s< %s" %(self.pid, to_send)
+    def send(self, *command):
+        to_send = serialize(tuple(command))
+        debug("%s< %s" %(self.pid, to_send))
         self.last_cmd = to_send
         self.outstream.write(to_send + "\n")
         self.outstream.flush()
 
     def hello(self):
         self.send("hello")
-        assert self.recv_one() == "hello"
+        assert self.recv_one()[0] == "hello"
 
     def listdir(self, directory):
         """ Lists the remote directory, reuturns:
             [
-                [ type, path ],
-                [ 'DIR', '/tmp/' ],
-                [ 'REG', '/tmp/foo' ],
+                ( type, path ),
+                ( 'DIR', '/tmp/' ),
+                ( 'REG', '/tmp/foo' ),
             ] """
         self.send("listdir", directory)
-        return map(lambda result: result.split(None, 1), self.recv())
+        return self.recv()
 
     def checksum(self, file):
         self.send("checksum", file)
 
     def last_checksum(self):
-        last = self.recv_one()
-        (command, checksum, file) = last.split(None, 2)
+        (command, checksum) = self.recv_one()
         assert command == "checksum"
         return checksum
+
+    def shutdown(self):
+        # Perform a graceful shutdown
+        self.send("bye")
 
 def check(canonical, backup):
     files = canonical.listdir("/")
@@ -80,6 +91,9 @@ def check(canonical, backup):
             checksums = canonical.last_checksum(), backup.last_checksum()
             print "Checksum of", path
             print "\t", ",".join(checksums)
+
+    canonical.shutdown()
+    backup.shutdown()
 
 def fork_slave():
     # Forks, starting a Slave, then returns a SlaveProxy connected to the

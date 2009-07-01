@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 from nose.tools import assert_equal
 
-from slave import shellquote, shellunquote
+from slave import shellquote, shellunquote, serialize, unserialize, \
+                  SerializationError
 
 def test_shellquote():
     tests = [
@@ -17,3 +18,34 @@ def test_shellquote():
         # And then that the unquoter will read it back properly
         print expected
         assert_equal(shellunquote(expected), [ test ])
+
+def test_serialize():
+    tests = [
+        ('cmd', 'arg "0"', "arg '1'"),
+        [ ('a', 'b'), ('a b', 'c d') ],
+    ]
+
+    for test in tests:
+        print "Test:", test
+        print "Serialized:", serialize(test)
+        assert_equal(unserialize(serialize(test)), test)
+
+    def generator():
+        yield ( "a", "b" )
+        yield ( "c", "d" )
+
+    assert_equal(serialize(generator()), serialize(list(generator())))
+
+def test_bad_serializers():
+    tests = [
+        "a plain string",
+        [ [ "nested list" ] ],
+        { "diction":"ary" },
+        ( [ "list in tuple" ] ),
+    ]
+
+    for test in tests:
+        try:
+            assert not serialize(test)
+        except SerializationError:
+            pass
