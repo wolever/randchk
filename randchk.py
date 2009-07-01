@@ -162,6 +162,7 @@ def _compare_files(*files):
 
     return error
 
+
 def compare_files(*files):
     """ Compare a list of files, assuming that the first is considered
         "canonical" (that is, each file will be compared against the first).

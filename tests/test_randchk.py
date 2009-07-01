@@ -98,7 +98,7 @@ def run_directory_test(directory):
             do_options(rest)
 
     # These are the directories which will be passed to check_directories.
-    # They are ordered alphanumerically, so let's hope the "canonical"
+    # They are ordered alphabetically, so let's hope the "canonical"
     # directory is first.
     test_directories = sorted(glob(path.join(directory, "*/")))
     actual_problems = list(check_directories(test_directories))
@@ -106,7 +106,7 @@ def run_directory_test(directory):
     for (_, problem_file, problem_description) in actual_problems:
         found = False
         for (eid, (e_file, e_description)) in enumerate(expected_problems):
-            # We only check that the problem file *ends* with the expeced file
+            # We only check that the problem file *ends* with the expected file
             # (makes life a bit easier, I think) 
             if not problem_file.endswith(e_file): continue
             assert e_description in problem_description, \

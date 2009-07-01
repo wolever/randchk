@@ -14,7 +14,6 @@ import shlex
 import sys
 
 def debug(msg):
-    return
     sys.stderr.write("%d: %s\n" %(os.getpid(), msg))
 
 def shellquote(s):
@@ -111,16 +110,23 @@ class Slave(object):
                 return
 
             result = self.run_command(command, args)
-            self.outstream.write(result + "\n\n")
+            result += "\n"
+            if len(result) > 1:
+                # Make sure that the result has a trailing newline
+                result += "\n"
+            self.outstream.write(result)
             self.outstream.flush()
 
     def run_command(self, command, args):
         command = command.upper() + "_command"
         try:
             result = getattr(self, command)(*args)
+            return serialize(result)
         except EnvironmentError, e:
-            result = ("ERROR", e.filename, e.strerror)
-        return serialize(result)
+            # It's possible that, if a generator is returned, an exception
+            # won't be raised until serialize starts to walk over it...
+            # So we have to keep this call separate
+            return serialize(("ERROR", e.filename, e.strerror))
 
     def LISTDIR_command(self, directory):
         for name in os.listdir(self.path(directory)):
