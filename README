@@ -1,11 +1,21 @@
 randchk will walk two directory structures in parallel, randomly checksumming
-files to ensure their integrity.
+files to ensure their integrity.  It is designed to be used in situations where
+there may not be time to checksum every file (either during or after a backup),
+but some confidence in backup integrity is desired.
 
-It is designed to be used in situations where there may not be time to checksum
-every file (either during or after a backup), but some confidence in backup
-integrity is desired.
+For example, I want my laptop backups to run as fast as possible, so I don't
+want to use rsync's '--checksum' option... But I also want to make sure my
+backups aren't corrupt. To do this, I run randchk after rsync:
 
-The algorithm is:
+    rsync / /Volums/BackupDisk/
+    randchk / /Volums/BackupDisk/
+
+This way, even if I don't have time to let randchk check all of my files, it
+will still check some of them. Additionally, each time randchk runs, it will
+check a different set of files, so two fifteen minute runs of randchk will be
+almost* as good as one thirty minute run.
+
+For the curious, here is the basic algorithm:
 
     files_to_check = list_directory(base_directory)
     while files_to_check:
@@ -15,7 +25,10 @@ The algorithm is:
         else:
             check_file(file, file.replace(base_directory, backup_directory))
 
-Nitpickers: yes, it's true, this algorithm is biased towards files high-up in
+* actually, not quite: the algorithm is biased towards files high-up in
 the hierarchy. The only way to remove this bias, though, is to find all the
 files on the system, which would significantly increase the time between
 "starting randchk" and "checking files" - something I am trying to avoid.
+
+In future, though, I'll be implementing a smarter walking algorithm, which will
+hopefully fix this.
