@@ -126,7 +126,7 @@ class Slave(object):
             # It's possible that, if a generator is returned, an exception
             # won't be raised until serialize starts to walk over it...
             # So we have to keep this call separate
-            return serialize(("ERROR", e.filename, e.strerror))
+            return serialize(("ENVERROR", e.filename, e.strerror))
 
     def LISTDIR_command(self, directory):
         for name in os.listdir(self.path(directory)):

@@ -13,10 +13,13 @@ from randchk import randlist, index_of_uniqe_element
 def debug(msg):
     sys.stderr.write("%s\n" %(msg, ))
 
-class SlaveError(Exception):
-    def __init__(self, slave, file, message):
-        Exception.__init__(self, "ERROR: %s: %r for %r (%s)"
-                                  %(message, file, slave.last_cmd, slave.pid))
+class SlaveEnvError(Exception):
+    def __init__(self, slave, filename, strerror):
+        Exception.__init__(self, "ENVERROR: %s: %r for %r (%s)"
+                                  %(strerror, file, slave.last_cmd, slave.pid))
+        self.slave = slave
+        self.filename = filename
+        self.strerror = strerror
 
 file_types = [ "REG", "DIR", "LNK", "BLK", "CHR", "FIFO", "SOCK" ]
 
@@ -61,9 +64,9 @@ class SlaveProxy(object):
         result = unserialize("\n".join(lines))
 
         # Result may be empty if, for example, it's an empty directory
-        if result and result[0] == "ERROR":
-            (_, file, message) = result
-            raise SlaveError(self, file, message)
+        if result and result[0] == "ENVERROR":
+            (_, file, strerror) = result
+            raise SlaveEnvError(self, file, strerror)
 
         return result
 
@@ -71,7 +74,9 @@ class SlaveProxy(object):
         result = self.recv()
         # Lists with only one element in them will become tuples...
         # so turn them into a proper list.
-        if type(result) == tuple:
+        # The len(...) > 0 check ensures that we don't end up
+        # with [ [ ] ].
+        if type(result) == tuple and len(result) > 0:
             result = [ result ]
         return result
 
@@ -95,7 +100,6 @@ class SlaveProxy(object):
         """ Lists the remote directory, reuturns a list of 'File' instances."""
         self.send("listdir", directory)
         list = self.recv_list()
-        debug(list)
         return [ File(f[0], f[1]) for f in list ]
 
     def checksum(self, file):
@@ -128,7 +132,6 @@ class basic_walker(object):
     def __iter__(self):
         files = list(self.list(self.root))
         while files:
-            debug(files)
             file = files.pop()
             if file.type == "DIR":
                 files.extend(self.list(file.path))
@@ -146,7 +149,6 @@ def _compare_file(file, slaves):
 
     checksums = [ slave.last_checksum() for slave in slaves ]
     unique = index_of_uniqe_element(checksums)
-    print checksums, unique
     if unique is not None:
         # XXX: Need to include which slave this is...
         return ( file.path, "bad_checksum" )
@@ -156,8 +158,8 @@ def _compare_file(file, slaves):
 def compare_file(file, slaves):
     try:
         return _compare_file(file, slaves)
-    except SlaveError, e:
-        return ( file.path, e.message )
+    except SlaveEnvError, e:
+        return ( e.filename, e.strerror )
 
 def check_directories(dirs, walker=basic_walker):
     slaves = [ fork_slave(dir) for dir in dirs ]
@@ -187,4 +189,4 @@ def fork_slave(root):
 
     return SlaveProxy(p.stdout, p.stdin, p.pid)
 
-print "\n".join(map(repr, check_directories(["crappy_test/a", "crappy_test/b"])))
+print "\n".join(map(repr, check_directories(["/tmp/", "/tmp/"])))
