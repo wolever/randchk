@@ -101,6 +101,7 @@ def run_directory_test(directory):
     # They are ordered alphabetically, so let's hope the "canonical"
     # directory is first.
     test_directories = sorted(glob(path.join(directory, "*/")))
+    from master import check_directories
     actual_problems = list(check_directories(test_directories))
 
     for (_, problem_file, problem_description) in actual_problems:

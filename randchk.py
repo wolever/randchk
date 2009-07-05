@@ -10,199 +10,98 @@ from optparse import OptionParser
 from random import randint
 from hashlib import md5
 
-class randlist(list):
-    def __iter__(self):
-        """ Return random items while being iterated over.
-            Note that it is ok to add items between yields. """
-        while len(self):
-            topop = randint(0, len(self) - 1)
-            yield self.pop(topop)
+from utils import obj
 
-def assert_dir(f):
-    """ Assert that 'f' is a directory. """
-    assert os.path.isdir(f), "%r is not a directory!" %(f)
+def debug(msg):
+    if not options.debug:
+        return
 
-def joinmany(dirname, files):
-    """ Join one directory to many files.
-        >>> joinmany("/tmp/", ['a', 'b'])
-        ['/tmp/a', '/tmp/b']
-        >>> """
-    return ( os.path.join(dirname, file) for file in files )
+    if options.slave:
+        msg = "%d: %s" %(os.getpid(), msg)
+    sys.stderr.write(msg + "\n")
 
-class file_walker(object):
-    def __init__(self, dirname):
-        self.dirname = dirname
-        self.file_count = 0
-        self.dir_count = 0
-        self.files = None
+class File(object):
+    __slots__ = [ 'path', 'type' ]
 
-        if (options["show_progress"]):
-            # The pretty progress bar.  The ETA is almost certainly a lie.
-            p = pb.ProgressBar(widgets=['Checked: ', pb.Percentage(), ' ',
-                                    pb.Bar(marker='=', left='[', right=']'),
-                                    ' ', pb.ETA()],
-                                maxval=1)
-            self.progress_bar = p
-        else:
-            self.progress_bar = None
+    types = [ "REG", "DIR", "LNK", "BLK", "CHR", "FIFO", "SOCK" ]
 
-        self._init_()
+    def __init__(self, type, path):
+        if type not in File.types:
+            raise Exception("Invalid type: %r" %(type))
+        self.type = type
+        self.path = path
 
-    def update_progress(self):
-        if self.progress_bar is None:
-            return
+    def __repr__(self):
+        return "<File path=%r type=%r>" %(self.path, self.type)
 
-        # Approximate the number of files left, given the average number of
-        # files in each directory seen so far and the average file to directory
-        # ratio.
-        seen = self.dir_count + self.file_count
-        # Remember, we have real division!
-        # Also, the (... or 1) is to prevent the initial division by zero error.
-        file_to_dir_ratio =  seen / (self.dir_count or 1)
-        approx_left = file_to_dir_ratio * len(self.files)
-        guess = seen + approx_left
-        self.progress_bar.maxval = guess
-        self.progress_bar.update(seen)
+def _check_file(file, slaves):
+    # Compare 'file' across the slaves
+    if file.type != "REG":
+        # Ignore non-regular files... For now.
+        return
 
-    def __iter__(self):
-        for file in self._iter_():
-            self.update_progress()
-            yield file
+    # TODO: Check file size
 
-    def _init_(self):
-        raise Exception("_init_ needs to be implemented by subclasses.")
+    for slave in slaves:
+        slave.checksum(file.path)
 
-    def _iter_(self):
-        raise Exception("_iter_ needs to be implemented by subclasses.")
+    checksums = [ slave.last_checksum() for slave in slaves ]
+    unique = index_of_uniqe_element(checksums)
+    if unique is not None:
+        # XXX: Need to include which slave this is...
+        return ( file.path, "bad_checksum" )
 
-class random_file_walker(file_walker):
-    def _init_(self):
-        self.files = randlist(joinmany(self.dirname, os.listdir(self.dirname)))
-
-    def _iter_(self):
-        """ Recursively yield all the files in 'dirname', randomly ordering
-            them. """
-        # XXX: Doesn't check for things like cyclic symlinks
-        for file in self.files:
-            if os.path.isdir(file):
-                self.dir_count += 1
-                self.files.extend(joinmany(file, os.listdir(file)))
-                continue
-            self.file_count += 1
-            yield file
-
-def switchprefix(old, new, path):
-    """ Switch the prefix of "path" from "old" to "new". """
-    assert path.startswith(old)
-    return new + path[len(old):]
-
-def file_is_symlink(file):
-    """ Symlinks, especially broken ones, cause lots of problems.
-        Ignore them for now. """
-    return os.path.islink(file)
-
-def file_size(file):
-    """ Get a file's size. """
-    return os.stat(file).st_size
-
-def file_summer(file):
-    with open(file) as f:
-        sum = md5()
-        data = f.read(1024)
-        while data:
-            sum.update(data)
-            yield sum.hexdigest()
-            data = f.read(1024)
-
-def index_of_uniqe_element(elements):
-    """ If 'i' contains an element which is not the same as the rest, return
-        its index or None.
-        index_of_uniqe_element([]) is undefined.
-        >>> index_of_uniqe_element(["a"])
-        None
-        >>> index_of_uniqe_element(["a", "a"])
-        None
-        >>> index_of_uniqe_element(["a", "x"])
-        1
-        >>> """
-    first_element = None
-    for (id, element) in enumerate(elements):
-        if first_element is None:
-            first_element = element
-
-        if element != first_element:
-            return id
     return None
 
-def _compare_files(*files):
-    if file_is_symlink(files[0]):
-        return None
-
-    expected_size = file_size(files[0])
-    for file in files[1:]:
-        size = file_size(file)
-        if size != expected_size:
-            return (file, "file_size %s != %s" %(size, expected_size))
-
-    # Checksum the files
-    error = None
-    sums = [ file_summer(f) for f in files ]
-    while error is None:
-        try:
-            these_sums = [ sum.next() for sum in sums ]
-        except StopIteration, e:
-            break
-
-        unique = index_of_uniqe_element(these_sums)
-        if unique is not None:
-            error = (files[unique], "bad_checksum")
-
-        if options["first1024"]:
-            break
-
-    return error
-
-
-def compare_files(*files):
-    """ Compare a list of files, assuming that the first is considered
-        "canonical" (that is, each file will be compared against the first).
-        A (file name, error description) tuple or None is reurned. """
-
+def check_file(file, slaves):
+    """ Check 'file' across 'slaves'. """
     try:
-        return _compare_files(*files)
-    except EnvironmentError, e:
-        return (e.filename, "env_error %s" %(e.strerror))
+        return _compare_file(file, slaves)
+    except SlaveEnvError, e:
+        return ( e.filename, "env_error " + e.strerror )
 
-def check_directories(dirs):
-    """ Randomly walk over the "canonical" files in dirs[0], comparing them to
-        the files in dirs[1:].  Triples of (canonical file path, problem file path,
-        problem description) are yielded. """
-    # Make sure that everything we've been passed is, in fact, a directory
-    map(assert_dir, dirs)
+def check_directories(dirs, walker=basic_walker):
+    slaves = [ fork_slave(dir) for dir in dirs ]
 
-    dirs = map(os.path.normpath, dirs)
-    source_dir = dirs[0]
-    dest_dirs = dirs[1:]
-
-    walker = random_file_walker(source_dir)
-    for source in walker:
-        dests = ( switchprefix(source_dir, dest_dir, source)
-                  for dest_dir in dest_dirs )
-        error = compare_files(source, *dests)
+    for file in walker(slaves[0].listdir):
+        error = compare_file(file, slaves)
         if error is not None:
-            (problem_file, problem_description) = error
-            yield source, problem_file, problem_description
+            yield error
+
+    for slave in slaves:
+        slave.shutdown()
 
 def default_options():
-    return dict((option, default) for
-                (option, default, _, _, _) in ordered_options)
+    return obj((option, default) for
+               (option, default, _, _, _) in ordered_options)
+
+def fork_slave(root):
+    """ Forks, starting a Slave, then returns a SlaveProxy connected to the
+        Slave's pipes. """
+
+    p = Popen([sys.argv[0], "--slave", root], stdin=PIPE, stdout=PIPE)
+
+    # Close the slaves pipes and wait for them to exit before we can exit
+    def wait_for_slave():
+        debug("Waiting for slave %d to exit..." %(p.pid))
+        p.stdin.close()
+        p.stdout.close()
+        p.wait()
+        debug("Done.")
+    atexit.register(wait_for_slave)
+
+    return SlaveProxy(p.stdout, p.stdin, p.pid)
 
 ordered_options = (
 #   (name, default, short, long, help)
-    ("first1024", False, "-1", "--first-1024",
-        "Only check the first 1024 bytes of each file."),
-    ("show_progress", False, "-p", "--progress",
-        "Show a progress bar."),
+#    ("first1024", False, "-1", "--first-1024",
+#        "Only check the first 1024 bytes of each file."),
+#    ("show_progress", False, "-p", "--progress",
+#        "Show a progress bar."),
+    ("debug", False, "-d", "--debug",
+        "Show debug information."),
+    ("slave", False, "-s", "--slave",
+        "(internal option)"),
 )
 
 options = default_options()
@@ -219,7 +118,7 @@ def parse_options():
         
     (parsed_options, args) = parser.parse_args()
 
-    new_options = {}
+    new_options = obj()
 
     # Load the options which have been changed into new_options
     for option, default_value in parser.defaults.items():

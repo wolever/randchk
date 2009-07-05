@@ -13,8 +13,7 @@ import stat
 import shlex
 import sys
 
-def debug(msg):
-    sys.stderr.write("%d: %s\n" %(os.getpid(), msg))
+from randchk import debug
 
 def shellquote(s):
     s = s.replace('"', r'\"') # Escape any single-quotes

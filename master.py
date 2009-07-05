@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-from cStringIO import StringIO
 from subprocess import Popen, PIPE
 
 import atexit
@@ -10,8 +9,6 @@ import os
 from slave import Slave, unserialize, serialize
 from randchk import randlist, index_of_uniqe_element
 
-def debug(msg):
-    sys.stderr.write("%s\n" %(msg, ))
 
 class SlaveEnvError(Exception):
     def __init__(self, slave, filename, strerror):
@@ -21,18 +18,6 @@ class SlaveEnvError(Exception):
         self.filename = filename
         self.strerror = strerror
 
-file_types = [ "REG", "DIR", "LNK", "BLK", "CHR", "FIFO", "SOCK" ]
-
-class File(object):
-    __slots__ = [ 'path', 'type' ]
-    def __init__(self, type, path):
-        if type not in file_types:
-            raise Exception("Invalid type: %r" %(type))
-        self.type = type
-        self.path = path
-
-    def __repr__(self):
-        return "<File path=%r type=%r>" %(self.path, self.type)
 
 class SlaveProxy(object):
     def __init__(self, instream=sys.stdin, outstream=sys.stdout, pid=-1):
@@ -114,79 +99,24 @@ class SlaveProxy(object):
         # Perform a graceful shutdown
         self.send("bye")
 
-class basic_walker(object):
-    def __init__(self, list, root="/"):
-        # 'list' is a function which accepts a path and return a list of files.
-        # currently it is assumed that this list will be in the form:
-        #    [ ( type, path ), ... ]
-        # where 'path' is the complete path:
-        #    >>> x = list("/tmp/")[0]
-        #    >>> x.path
-        #    '/tmp/x.py'
-        #    >>> x.type
-        #    'REG'
-        #    >>>
-        self.list = list
-        self.root = "/"
 
-    def __iter__(self):
-        files = list(self.list(self.root))
-        while files:
-            file = files.pop()
-            if file.type == "DIR":
-                files.extend(self.list(file.path))
-                continue
-            yield file
+class LocalSlaveProxy(object):
+    def __init__(self, path, **kwargs):
+        child = Popen([sys.argv[0], "--slave", root], stdin=PIPE, stdout=PIPE)
+        self.child = child
 
-def _compare_file(file, slaves):
-    # Compare 'file' across the slaves
-    if file.type != "REG":
-        # Ignore non-regular files... For now.
-        return
+        def ensure_child_is_closed():
+            if self.child.returncode != None:
+                self.shutdown()
+        atexit.register(ensure_child_is_closed)
 
-    for slave in slaves:
-        slave.checksum(file.path)
+        SlaveProxy.__init__(self, child.stdout, child.stdin, child.pid)
 
-    checksums = [ slave.last_checksum() for slave in slaves ]
-    unique = index_of_uniqe_element(checksums)
-    if unique is not None:
-        # XXX: Need to include which slave this is...
-        return ( file.path, "bad_checksum" )
+    def shutdown(self):
+        SlaveProxy.shutdown(self)
 
-    return None
-
-def compare_file(file, slaves):
-    try:
-        return _compare_file(file, slaves)
-    except SlaveEnvError, e:
-        return ( e.filename, e.strerror )
-
-def check_directories(dirs, walker=basic_walker):
-    slaves = [ fork_slave(dir) for dir in dirs ]
-
-    for file in walker(slaves[0].listdir):
-        error = compare_file(file, slaves)
-        if error is not None:
-            yield error
-
-    for slave in slaves:
-        slave.shutdown()
-
-def fork_slave(root):
-    # Forks, starting a Slave, then returns a SlaveProxy connected to the
-    # Slave's pipes
-
-    p = Popen(["./slave.py", root], stdin=PIPE, stdout=PIPE)
-
-    # Close the slaves pipes and wait for them to exit before we can exit
-    def wait_for_slave():
-        print "Waiting for slave %d to exit..." %(p.pid),
-        p.stdin.close()
-        p.stdout.close()
-        p.wait()
-        print "Done."
-    atexit.register(wait_for_slave)
-
-    return SlaveProxy(p.stdout, p.stdin, p.pid)
-
-print "\n".join(map(repr, check_directories(["/tmp/", "/tmp/"])))
+        debug("Waiting for %d to exit..." %(self.child.pid))
+        self.child.stdin.close()
+        self.child.stdout.close()
+        self.child.wait()
+        debug("Done: %d exited with %s" %(self.child.pid, self.child.returncode))
