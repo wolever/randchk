@@ -10,7 +10,8 @@ from optparse import OptionParser
 from random import randint
 from hashlib import md5
 
-from utils import obj
+from utils import obj, index_of_uniqe_element
+from walkers import basic_walker
 
 def debug(msg):
     if not options.debug:
@@ -18,7 +19,7 @@ def debug(msg):
 
     if options.slave:
         msg = "%d: %s" %(os.getpid(), msg)
-    sys.stderr.write(msg + "\n")
+    sys.stderr.write("%s\n" %(msg, ))
 
 class File(object):
     __slots__ = [ 'path', 'type' ]
@@ -54,43 +55,61 @@ def _check_file(file, slaves):
     return None
 
 def check_file(file, slaves):
-    """ Check 'file' across 'slaves'. """
+    """ Check 'file' across 'slaves'.
+        Returns a tuple '(file, description)' if any file causes an error. """
+    from proxies import SlaveEnvError
+
     try:
-        return _compare_file(file, slaves)
+        return _check_file(file, slaves)
     except SlaveEnvError, e:
         return ( e.filename, "env_error " + e.strerror )
 
-def check_directories(dirs, walker=basic_walker):
-    slaves = [ fork_slave(dir) for dir in dirs ]
-
+def check(slaves, walker=basic_walker):
+    """ Start checking that the files seen by 'slaves' are identical. """
     for file in walker(slaves[0].listdir):
-        error = compare_file(file, slaves)
+        error = check_file(file, slaves)
         if error is not None:
-            yield error
+            (problem_file, problem_description) = error
+            yield ( problem_file, problem_description, file )
+
+def run_master(args, help):
+    if len(args) != 2:
+        help()
+        return 1
+
+    from proxies import LocalSlaveProxy
+    slaves = [ LocalSlaveProxy(dir) for dir in args ]
+
+    for (canonical_file, problem_file, description) in check(slaves):
+        print "%s: %s (%s)" %(problem_file, description, canonical_file)
 
     for slave in slaves:
         slave.shutdown()
 
+    return 0
+
+def run_slave(args, help):
+    if len(args) != 1:
+        sys.stderr.write("Slave got incorrect number of arguments.\n")
+        sys.stderr.write("Expected 1, got %d.\n" %(len(args)))
+        return 1
+
+    from slave import Slave
+    Slave(args[0]).run()
+    return 0
+
+def run():
+    (parser, args, new_options) = parse_options()
+    options.update(new_options)
+
+    if options.slave:
+        return run_slave(args, parser.print_help)
+    else:
+        return run_master(args, parser.print_help)
+
 def default_options():
     return obj((option, default) for
                (option, default, _, _, _) in ordered_options)
-
-def fork_slave(root):
-    """ Forks, starting a Slave, then returns a SlaveProxy connected to the
-        Slave's pipes. """
-
-    p = Popen([sys.argv[0], "--slave", root], stdin=PIPE, stdout=PIPE)
-
-    # Close the slaves pipes and wait for them to exit before we can exit
-    def wait_for_slave():
-        debug("Waiting for slave %d to exit..." %(p.pid))
-        p.stdin.close()
-        p.stdout.close()
-        p.wait()
-        debug("Done.")
-    atexit.register(wait_for_slave)
-
-    return SlaveProxy(p.stdout, p.stdin, p.pid)
 
 ordered_options = (
 #   (name, default, short, long, help)
@@ -98,12 +117,11 @@ ordered_options = (
 #        "Only check the first 1024 bytes of each file."),
 #    ("show_progress", False, "-p", "--progress",
 #        "Show a progress bar."),
-    ("debug", False, "-d", "--debug",
+    ("debug", True, "-d", "--debug",
         "Show debug information."),
     ("slave", False, "-s", "--slave",
         "(internal option)"),
 )
-
 options = default_options()
 
 def parse_options():
@@ -129,12 +147,4 @@ def parse_options():
     return (parser, args, new_options)
 
 if __name__ == "__main__":
-    (parser, args, new_options) = parse_options()
-    options.update(new_options)
-
-    if len(args) != 2:
-        parser.print_help()
-        sys.exit(1)
-
-    for (canonical_file, problem_file, description) in check_directories(args):
-        print "%s: %s (%s)" %(problem_file, description, canonical_file)
+    sys.exit(run())

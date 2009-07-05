@@ -6,9 +6,8 @@ import atexit
 import sys
 import os
 
-from slave import Slave, unserialize, serialize
-from randchk import randlist, index_of_uniqe_element
-
+from utils import serialize, unserialize, randlist, index_of_uniqe_element
+from randchk import debug, File
 
 class SlaveEnvError(Exception):
     def __init__(self, slave, filename, strerror):
@@ -67,6 +66,7 @@ class SlaveProxy(object):
 
     def recv_one(self):
         result = self.recv()
+        debug(result)
         assert type(result) != list
         return result
 
@@ -100,13 +100,13 @@ class SlaveProxy(object):
         self.send("bye")
 
 
-class LocalSlaveProxy(object):
-    def __init__(self, path, **kwargs):
-        child = Popen([sys.argv[0], "--slave", root], stdin=PIPE, stdout=PIPE)
+class LocalSlaveProxy(SlaveProxy):
+    def __init__(self, path):
+        child = Popen([sys.argv[0], "--slave", path], stdin=PIPE, stdout=PIPE)
         self.child = child
 
         def ensure_child_is_closed():
-            if self.child.returncode != None:
+            if self.child.returncode == None:
                 self.shutdown()
         atexit.register(ensure_child_is_closed)
 

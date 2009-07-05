@@ -1,57 +1,17 @@
 #!/usr/bin/env python
 from __future__ import with_statement
 
-from randchk import assert_dir
 
 from hashlib import md5
-from types import GeneratorType
 from os import path
 
 import os
 import re
 import stat
-import shlex
 import sys
 
 from randchk import debug
-
-def shellquote(s):
-    s = s.replace('"', r'\"') # Escape any single-quotes
-    if re.search(r"\s", s):
-        # Only quote the string if it contains whitespace
-        s = '"' + s + '"'
-    return s
-
-def shellunquote(s):
-    return shlex.split(s)
-
-class SerializationError(Exception):
-    pass
-
-def unserialize(s):
-    lines = s.split("\n")
-    if len(lines) > 1:
-        return [ tuple(shellunquote(line)) for line in lines ]
-    else:
-        return tuple(shellunquote(lines[0]))
-
-def serialize(obj, recurse=None):
-    # Serialize a tuple which contains strings, or a list
-    # which contains tuples.
-    if isinstance(obj, GeneratorType) and recurse == None:
-        return serialize(list(obj))
-
-    elif isinstance(obj, list) and recurse == None:
-        return "\n".join(serialize(item, "list") for item in obj)
-
-    elif isinstance(obj, tuple) and recurse in (None, "list"):
-        return " ".join(serialize(item, "tuple") for item in obj)
-
-    if isinstance(obj, basestring) and recurse == "tuple":
-        return shellquote(obj)
-
-    else:
-        raise SerializationError("Can't serialize %r" %(obj))
+from utils import serialize, unserialize, assert_dir
 
 def checksum(file):
     with open(file) as f:
