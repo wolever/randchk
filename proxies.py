@@ -118,7 +118,15 @@ class SlaveProxy(object):
 
 class LocalSlaveProxy(SlaveProxy):
     def __init__(self, path):
-        child = Popen([sys.argv[0], "--slave", path], stdin=PIPE, stdout=PIPE)
+        # Args which will be passed to fork()
+        args = [sys.argv[0], "--slave"]
+        # Add all the options (assuming, for now, options start with a '-'
+        # and none of the options take an argument).
+        args.extend( arg for arg in sys.argv if arg.startswith("-") )
+        args.append(path)
+
+        # Fork() and start the child
+        child = Popen(args, stdin=PIPE, stdout=PIPE)
         self.child = child
 
         def ensure_child_is_closed():

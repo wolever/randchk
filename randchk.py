@@ -135,8 +135,8 @@ def default_options():
 
 ordered_options = (
 #   (name, default, short, long, help)
-#    ("first1024", False, "-1", "--first-1024",
-#        "Only check the first 1024 bytes of each file."),
+    ("first1024", False, "-1", "--first-1024",
+        "Only check the first 1024 bytes of each file."),
 #    ("show_progress", False, "-p", "--progress",
 #        "Show a progress bar."),
     ("debug", False, "-d", "--debug",

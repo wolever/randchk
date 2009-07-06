@@ -10,17 +10,26 @@ import re
 import stat
 import sys
 
-from randchk import debug
+from randchk import debug, options
 from utils import serialize, unserialize, assert_dir
 
 def checksum(file):
     """ Checksum a file. """
     with open(file) as f:
         sum = md5()
-        data = f.read(1024)
-        while data:
-            sum.update(data)
+
+        if options.first1024:
+            # Only do one read
             data = f.read(1024)
+            sum.update(data)
+
+        else:
+            # Read until the end
+            data = f.read(1024)
+            while data:
+                sum.update(data)
+                data = f.read(1024)
+
         return sum.hexdigest()
 
 def file_size(file):

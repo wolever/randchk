@@ -62,6 +62,16 @@ def directory_tests():
 
 @nottest
 def run_directory_test(directory):
+    """ A thin wrapper around _run_directory_test to ensure that sys.argv is
+        properly reset after each test. """
+    old_argv = sys.argv
+    try:
+        _run_directory_test(directory)
+    finally:
+        sys.argv = old_argv
+
+@nottest
+def _run_directory_test(directory):
     # Set the description of this function so Nose will give it a sensible name
     readme = open(path.join(directory, "README")).read()
 
@@ -78,12 +88,12 @@ def run_directory_test(directory):
     def do_options(line):
         """ Parse an "options" line, returning nothing. """
         import sys
-        old_argv = sys.argv
-        sys.argv = [ old_argv[0] ] + line.split()
+        sys.argv = [ sys.argv[0] ] + line.split()
         (_, _, new_options) = parse_options()
-        randchk.options = default_options()
-        randchk.options.update(new_options)
-        sys.argv = old_argv
+        return new_options
+
+    # Reset the options to default before each run
+    randchk.options = default_options()
 
     expected_problems = []
     for line in readme.splitlines():
@@ -95,21 +105,17 @@ def run_directory_test(directory):
         if header == "Problem":
             expected_problems.append(do_problem(rest))
         elif header == "Options":
-            do_options(rest)
+            randchk.options.update(do_options(rest))
 
     # These are the directories which will be passed to compare_directories.
     # They are ordered alphabetically, so let's hope the "canonical"
     # directory is first.
     test_directories = sorted(glob(path.join(directory, "*/")))
 
-    old_argv0 = sys.argv[0]
-    try:
-        # Fake argv[0] so we can fork() properly
-        sys.argv[0] = "../randchk.py"
-        # Actually run the code
-        actual_problems = list(compare_directories(test_directories))
-    finally:
-        sys.argv[0] = old_argv0
+    # Fake argv[0] so we can fork() properly
+    sys.argv[0] = "../randchk.py"
+    # Actually run the code
+    actual_problems = list(compare_directories(test_directories))
 
     print "Expected problems:"
     print " - " + "\n - ".join(", ".join(p) for p in expected_problems)
