@@ -113,6 +113,8 @@ def run_directory_test(directory):
 
     print "Expected problems:"
     print " - " + "\n - ".join(", ".join(p) for p in expected_problems)
+    print "Actual problems:"
+    print " - " + "\n - ".join(", ".join(p) for p in actual_problems)
 
     for (problem_file, problem_description, _) in actual_problems:
         found = False
