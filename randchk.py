@@ -44,25 +44,29 @@ def slavemap(slaves, cmd, *args):
 
     return [ getattr(slave, "last_" + cmd)() for slave in slaves ]
 
+def run_check(slaves, check, file):
+    """ Run a check on slaves and return tuple with an error, or None. """
+    # Run the check across the slaves
+    results = slavemap(slaves, check, file.path)
+    # Find out if any of them are different
+    unique = index_of_uniqe_element(results)
+    if unique is not None:
+        # Figure out which file caused the problem
+        problem_file = slaves[unique].full_path(file)
+        return ( problem_file,
+                 "%s %s != %s" %(check, results[unique], results[0]) )
+    # If there is no error, we're done!
+    return None
+
 def _check_file(file, slaves):
     # Compare 'file' across the slaves
     if file.type != "REG":
         # Ignore non-regular files... For now.
         return
 
-    sizes = slavemap(slaves, "size", file.path)
-    unique = index_of_uniqe_element(sizes)
-    if unique is not None:
-        problem_file = slaves[unique].full_path(file)
-        return ( problem_file,
-                "size %s != %s" %(sizes[unique], sizes[0]) )
-
-    checksums = slavemap(slaves, "checksum", file.path)
-    unique = index_of_uniqe_element(checksums)
-    if unique is not None:
-        problem_file = slaves[unique].full_path(file)
-        return ( problem_file,
-                 "checksum %s != %s" %(checksums[unique], checksums[0]) )
+    for check in ("size", "checksum"):
+        error = run_check(slaves, check, file)
+        if error: return error
 
     return None
 
