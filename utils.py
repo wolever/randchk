@@ -1,6 +1,7 @@
 import re
 import shlex
 
+from random import randint
 from types import GeneratorType
 from os import path
 

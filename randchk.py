@@ -4,11 +4,9 @@ from __future__ import with_statement
 from __future__ import division
 
 import os
-import progressbar as pb
 import sys
+
 from optparse import OptionParser
-from random import randint
-from hashlib import md5
 
 from utils import obj, index_of_uniqe_element
 from walkers import basic_walker
@@ -72,19 +70,23 @@ def check(slaves, walker=basic_walker):
             (problem_file, problem_description) = error
             yield ( problem_file, problem_description, file )
 
+def compare_directories(dirs):
+    from proxies import LocalSlaveProxy
+    slaves = [ LocalSlaveProxy(dir) for dir in dirs ]
+
+    for problem in check(slaves):
+        yield problem
+
+    for slave in slaves:
+        slave.shutdown()
+
 def run_master(args, help):
     if len(args) != 2:
         help()
         return 1
 
-    from proxies import LocalSlaveProxy
-    slaves = [ LocalSlaveProxy(dir) for dir in args ]
-
-    for (canonical_file, problem_file, description) in check(slaves):
+    for (canonical_file, problem_file, description) in compare_directories(args):
         print "%s: %s (%s)" %(problem_file, description, canonical_file)
-
-    for slave in slaves:
-        slave.shutdown()
 
     return 0
 
