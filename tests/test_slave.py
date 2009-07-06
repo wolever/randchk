@@ -20,6 +20,7 @@ def test_shellquote():
         assert_equal(shellunquote(expected), [ test ])
 
 def test_serialize():
+    # TODO: Test serializing numbers.
     tests = [
         ('cmd', 'arg "0"', "arg '1'"),
         [ ('a', 'b'), ('a b', 'c d') ],

@@ -14,6 +14,7 @@ from randchk import debug
 from utils import serialize, unserialize, assert_dir
 
 def checksum(file):
+    """ Checksum a file. """
     with open(file) as f:
         sum = md5()
         data = f.read(1024)
@@ -21,6 +22,10 @@ def checksum(file):
             sum.update(data)
             data = f.read(1024)
         return sum.hexdigest()
+
+def file_size(file):
+    """ Get a file's size. """
+    return os.stat(file).st_size
 
 def file_type(path):
     _types = {
@@ -95,6 +100,10 @@ class Slave(object):
     def CHECKSUM_command(self, file):
         file = self.path(file)
         return ("checksum", checksum(file))
+
+    def SIZE_command(self, file):
+        file = self.path(file)
+        return ("size", file_size(file))
 
     def HELLO_command(self):
         return ("hello", )

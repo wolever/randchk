@@ -103,6 +103,14 @@ class SlaveProxy(object):
         assert command == "checksum"
         return checksum
 
+    def size(self, file):
+        self.send("size", file)
+
+    def last_size(self):
+        (command, size) = self.recv_one()
+        assert command == "size"
+        return size
+
     def shutdown(self):
         # Perform a graceful shutdown
         self.send("bye")

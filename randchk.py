@@ -38,23 +38,31 @@ class File(object):
     def __repr__(self):
         return "<File path=%r type=%r>" %(self.path, self.type)
 
+def slavemap(slaves, cmd, *args):
+    for slave in slaves:
+        getattr(slave, cmd)(*args)
+
+    return [ getattr(slave, "last_" + cmd)() for slave in slaves ]
+
 def _check_file(file, slaves):
     # Compare 'file' across the slaves
     if file.type != "REG":
         # Ignore non-regular files... For now.
         return
 
-    # TODO: Check file size
+    sizes = slavemap(slaves, "size", file.path)
+    unique = index_of_uniqe_element(sizes)
+    if unique is not None:
+        problem_file = slaves[unique].full_path(file)
+        return ( problem_file,
+                "size %s != %s" %(sizes[unique], sizes[0]) )
 
-    for slave in slaves:
-        slave.checksum(file.path)
-
-    checksums = [ slave.last_checksum() for slave in slaves ]
+    checksums = slavemap(slaves, "checksum", file.path)
     unique = index_of_uniqe_element(checksums)
     if unique is not None:
-        # XXX: Need to include which slave this is...
         problem_file = slaves[unique].full_path(file)
-        return ( problem_file, "bad_checksum" )
+        return ( problem_file,
+                 "checksum %s != %s" %(checksums[unique], checksums[0]) )
 
     return None
 

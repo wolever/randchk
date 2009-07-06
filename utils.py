@@ -65,7 +65,7 @@ def unserialize(s):
         return tuple(shellunquote(lines[0]))
 
 def serialize(obj, recurse=None):
-    # Serialize a tuple which contains strings, or a list
+    # Serialize a tuple which contains strings or numbers, or a list
     # which contains tuples.
     if isinstance(obj, GeneratorType) and recurse == None:
         return serialize(list(obj))
@@ -76,8 +76,11 @@ def serialize(obj, recurse=None):
     elif isinstance(obj, tuple) and recurse in (None, "list"):
         return " ".join(serialize(item, "tuple") for item in obj)
 
-    if isinstance(obj, basestring) and recurse == "tuple":
+    elif isinstance(obj, basestring) and recurse == "tuple":
         return shellquote(obj)
+
+    elif isinstance(obj, (int, long, float)) and recurse == "tuple":
+        return str(obj)
 
     else:
         raise SerializationError("Can't serialize %r" %(obj))
