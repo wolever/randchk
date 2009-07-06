@@ -9,6 +9,9 @@ class obj(dict):
     def __getattr__(self, key):
         return self[key]
 
+    def __setattr__(self, key, value):
+        self[key] = value
+
 class randlist(list):
     def __iter__(self):
         """ Return random items while being iterated over.

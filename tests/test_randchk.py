@@ -111,6 +111,8 @@ def run_directory_test(directory):
     finally:
         sys.argv[0] = old_argv0
 
+    print "Expected problems:"
+    print " - " + "\n - ".join(", ".join(p) for p in expected_problems)
 
     for (_, problem_file, problem_description) in actual_problems:
         found = False

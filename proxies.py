@@ -19,7 +19,8 @@ class SlaveEnvError(Exception):
 
 
 class SlaveProxy(object):
-    def __init__(self, instream=sys.stdin, outstream=sys.stdout, pid=-1):
+    def __init__(self, base_path, instream=sys.stdin, outstream=sys.stdout, pid=-1):
+        self.base_path = base_path
         self.instream = instream
         self.outstream = outstream
         self.pid = pid
@@ -85,7 +86,7 @@ class SlaveProxy(object):
         """ Lists the remote directory, reuturns a list of 'File' instances."""
         self.send("listdir", directory)
         list = self.recv_list()
-        return [ File(f[0], f[1]) for f in list ]
+        return [ File(f[0], f[1], self.base_path) for f in list ]
 
     def checksum(self, file):
         self.send("checksum", file)
@@ -110,7 +111,7 @@ class LocalSlaveProxy(SlaveProxy):
                 self.shutdown()
         atexit.register(ensure_child_is_closed)
 
-        SlaveProxy.__init__(self, child.stdout, child.stdin, child.pid)
+        SlaveProxy.__init__(self, path, child.stdout, child.stdin, child.pid)
 
     def shutdown(self):
         SlaveProxy.shutdown(self)

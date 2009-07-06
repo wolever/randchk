@@ -20,18 +20,23 @@ def debug(msg):
     sys.stderr.write("%s\n" %(msg, ))
 
 class File(object):
-    __slots__ = [ 'path', 'type' ]
+    __slots__ = [ 'type', 'path', 'base_path' ]
 
     types = [ "REG", "DIR", "LNK", "BLK", "CHR", "FIFO", "SOCK" ]
 
-    def __init__(self, type, path):
+    def __init__(self, type, path, base_path):
         if type not in File.types:
             raise Exception("Invalid type: %r" %(type))
         self.type = type
         self.path = path
+        self.base_path = base_path
 
     def __repr__(self):
-        return "<File path=%r type=%r>" %(self.path, self.type)
+        return "<File path=%r base=%r type=%r>" %(self.path, self.base_path, self.type)
+
+    @property
+    def full_path(self):
+        return os.path.join(self.base_path, self.path.lstrip("/"))
 
 def _check_file(file, slaves):
     # Compare 'file' across the slaves
@@ -68,7 +73,7 @@ def check(slaves, walker=basic_walker):
         error = check_file(file, slaves)
         if error is not None:
             (problem_file, problem_description) = error
-            yield ( problem_file, problem_description, file )
+            yield ( problem_file, problem_description, file.full_path )
 
 def compare_directories(dirs):
     from proxies import LocalSlaveProxy
@@ -85,8 +90,8 @@ def run_master(args, help):
         help()
         return 1
 
-    for (canonical_file, problem_file, description) in compare_directories(args):
-        print "%s: %s (%s)" %(problem_file, description, canonical_file)
+    for ( canonical_file, problem_file, description ) in compare_directories(args):
+        print "%s: %s (%s)" %( problem_file, description, canonical_file )
 
     return 0
 
@@ -119,7 +124,7 @@ ordered_options = (
 #        "Only check the first 1024 bytes of each file."),
 #    ("show_progress", False, "-p", "--progress",
 #        "Show a progress bar."),
-    ("debug", True, "-d", "--debug",
+    ("debug", False, "-d", "--debug",
         "Show debug information."),
     ("slave", False, "-s", "--slave",
         "(internal option)"),
