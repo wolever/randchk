@@ -20,23 +20,23 @@ def debug(msg):
     sys.stderr.write("%s\n" %(msg, ))
 
 class File(object):
-    __slots__ = [ 'type', 'path', 'base_path' ]
+    """ Represents the relative path to a file.
+        In other words, a File does not know which slave it is associated with.
+        Or, a File represents a file which should be common to all slaves. """
+
+    # We could have a lot of Files, so define which slots we'll be using.
+    __slots__ = [ 'type', 'path' ]
 
     types = [ "REG", "DIR", "LNK", "BLK", "CHR", "FIFO", "SOCK" ]
 
-    def __init__(self, type, path, base_path):
+    def __init__(self, type, path):
         if type not in File.types:
             raise Exception("Invalid type: %r" %(type))
         self.type = type
         self.path = path
-        self.base_path = base_path
 
     def __repr__(self):
-        return "<File path=%r base=%r type=%r>" %(self.path, self.base_path, self.type)
-
-    @property
-    def full_path(self):
-        return os.path.join(self.base_path, self.path.lstrip("/"))
+        return "<File path=%r type=%r>" %(self.path, self.type)
 
 def _check_file(file, slaves):
     # Compare 'file' across the slaves
@@ -53,7 +53,8 @@ def _check_file(file, slaves):
     unique = index_of_uniqe_element(checksums)
     if unique is not None:
         # XXX: Need to include which slave this is...
-        return ( file.path, "bad_checksum" )
+        problem_file = slaves[unique].full_path(file)
+        return ( problem_file, "bad_checksum" )
 
     return None
 
@@ -73,7 +74,9 @@ def check(slaves, walker=basic_walker):
         error = check_file(file, slaves)
         if error is not None:
             (problem_file, problem_description) = error
-            yield ( problem_file, problem_description, file.full_path )
+            yield ( problem_file,
+                    problem_description,
+                    slaves[0].full_path(file) )
 
 def compare_directories(dirs):
     from proxies import LocalSlaveProxy
@@ -90,7 +93,7 @@ def run_master(args, help):
         help()
         return 1
 
-    for ( canonical_file, problem_file, description ) in compare_directories(args):
+    for (problem_file, description, canonical_file) in compare_directories(args):
         print "%s: %s (%s)" %( problem_file, description, canonical_file )
 
     return 0

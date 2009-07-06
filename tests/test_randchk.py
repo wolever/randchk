@@ -114,7 +114,7 @@ def run_directory_test(directory):
     print "Expected problems:"
     print " - " + "\n - ".join(", ".join(p) for p in expected_problems)
 
-    for (_, problem_file, problem_description) in actual_problems:
+    for (problem_file, problem_description, _) in actual_problems:
         found = False
         for (eid, (e_file, e_description)) in enumerate(expected_problems):
             # We only check that the problem file *ends* with the expected file

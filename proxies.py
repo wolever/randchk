@@ -27,6 +27,13 @@ class SlaveProxy(object):
         self.last_cmd = None
         self.hello()
 
+    def full_path(self, to_file):
+        """ Return the full path to file 'to_file' relative to this slave:
+            >>> SlaveProxy("/foo/bar/").full_path(File("REG", "/baz"))
+            '/foo/bar/baz'
+            >>> """
+        return os.path.join(self.base_path, to_file.path.lstrip("/"))
+
     def recv(self):
         lines = []
         while True:
@@ -86,7 +93,7 @@ class SlaveProxy(object):
         """ Lists the remote directory, reuturns a list of 'File' instances."""
         self.send("listdir", directory)
         list = self.recv_list()
-        return [ File(f[0], f[1], self.base_path) for f in list ]
+        return [ File(f[0], f[1]) for f in list ]
 
     def checksum(self, file):
         self.send("checksum", file)
