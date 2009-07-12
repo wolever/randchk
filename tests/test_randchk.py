@@ -2,11 +2,9 @@
 from randchk import *
 import randchk
 
-from utils import randlist, assert_dir
-
 from re import match
 from glob import glob
-from nose.tools import assert_equal, assert_raises, nottest
+from nose.tools import assert_equal, nottest
 from os import path
 from os import walk as oswalk
 from os.path import dirname
@@ -20,30 +18,6 @@ def sanewalk(dir):
 def helper_dir(name):
     """ Return the name of a subdirectory of this test directory. """
     return path.join(dirname(__file__), name)
-
-def test_randlist():
-    # Check that itering over the list works, even when items are being added
-    rl = randlist([1,2])
-    actual = set()
-    for r in rl:
-        actual.add(r)
-        if len(actual) == 1:
-            rl.append(3)
-    assert_equal(actual, set([1,2,3]))
-
-def test_index_of_uniqe_element():
-    tests = (
-        ([1], None),
-        ([1, 1], None),
-        ([1, 2], 1),
-        ([2, 1], 1))
-    for (input, expected) in tests:
-        actual = index_of_uniqe_element(input)
-        assert_equal(actual, expected)
-
-def test_assert_dir():
-    assert_dir('.')
-    assert_raises(AssertionError, assert_dir, __file__)
 
 def test_random_file_walker():
     # XXX: Fix this one.
