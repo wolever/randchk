@@ -19,8 +19,7 @@ def test_shellquote():
         print expected
         assert_equal(shellunquote(expected), [ test ])
 
-def test_serialize():
-    # TODO: Test serializing numbers.
+def test_serialize_simple():
     tests = [
         ('cmd', 'arg "0"', "arg '1'"),
         [ ('a', 'b'), ('a b', 'c d') ],
@@ -31,11 +30,16 @@ def test_serialize():
         print "Serialized:", serialize(test)
         assert_equal(unserialize(serialize(test)), test)
 
+
+def test_serialize_generator():
     def generator():
         yield ( "a", "b" )
         yield ( "c", "d" )
 
     assert_equal(serialize(generator()), serialize(list(generator())))
+
+def test_serialize_numbers():
+    assert_equal(serialize( (42, 42.0, 42L) ), "42 42.0 42")
 
 def test_bad_serializers():
     tests = [
