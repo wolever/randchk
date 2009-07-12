@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 from nose.tools import assert_equal
 
-from slave import shellquote, shellunquote, serialize, unserialize, \
+from utils import shellquote, shellunquote, serialize, unserialize, \
                   SerializationError
 
 def test_shellquote():
