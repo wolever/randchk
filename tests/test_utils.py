@@ -6,7 +6,7 @@ from utils import shellquote, shellunquote, serialize, unserialize, \
 
 from utils import obj
 
-from utils import randlist, assert_dir
+from utils import randlist, assert_dir, index_of_uniqe_element
 
 def test_shellquote():
     tests = [
