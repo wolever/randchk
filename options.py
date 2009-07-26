@@ -1,4 +1,28 @@
+from optparse import OptionParser
+
 from utils import obj
+
+def parse_options():
+    # Parse the command line arguments
+    parser = OptionParser(usage = "usage: %prog [options] CANONICAL CHECK...\n"
+        "\tRandomly checksum files in CANONICAL, comparing them to the same\n"
+        "\tfile in each CHECK ensuring that they are the same.")
+
+    for (name, _, short, long, help) in ordered_options:
+        parser.add_option(short, long, action="store_true",
+                          dest=name, help=help)
+
+    (parsed_options, args) = parser.parse_args()
+
+    new_options = obj()
+
+    # Load the options which have been changed into new_options
+    for option, default_value in parser.defaults.items():
+        new_value = getattr(parsed_options, option)
+        if default_value != new_value:
+            new_options[option] = new_value
+
+    return (parser, args, new_options)
 
 def default_options():
     return obj((option, default) for
