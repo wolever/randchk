@@ -1,5 +1,6 @@
 # If this file is run through nose, .. will automatically be added to sys.path.
 from randchk import *
+from master import compare_directories
 from options import options, default_options
 
 from re import match

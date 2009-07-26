@@ -120,3 +120,6 @@ class Slave(object):
 
     def HELLO_command(self):
         return ("hello", )
+
+if __name__ == "__main__":
+    print "slave.py should not be run directly - use `randchk.py --slave`"

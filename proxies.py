@@ -7,7 +7,8 @@ import sys
 import os
 
 from utils import serialize, unserialize, randlist, index_of_uniqe_element
-from randchk import debug, File
+from master import File
+from randchk import debug
 
 class SlaveEnvError(Exception):
     def __init__(self, slave, filename, strerror):
