@@ -1,6 +1,6 @@
 from optparse import OptionParser
 
-from utils import obj
+from .utils import obj
 
 def parse_options():
     # Parse the command line arguments

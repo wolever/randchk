@@ -1,8 +1,8 @@
 from __future__ import division
 
-from utils import index_of_uniqe_element
-from walkers import basic_walker
-from options import options
+from .options import options
+from .utils import index_of_uniqe_element
+from .walkers import basic_walker
 
 class File(object):
     """ Represents the relative path to a file.

@@ -10,8 +10,9 @@ import re
 import stat
 import sys
 
-from randchk import debug, options
-from utils import serialize, unserialize, assert_dir
+from .debug import debug
+from .options import options
+from .utils import serialize, unserialize, assert_dir
 
 def checksum(file):
     """ Checksum a file. """
