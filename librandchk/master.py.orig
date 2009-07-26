@@ -51,7 +51,7 @@ def slavemap(slaves, cmd, *args):
 def run_check(slaves, check, file):
     """ Run a check on slaves and return tuple with an error, or None. """
     # Run the check across the slaves
-    results = slavemap(slaves, check, file)
+    results = slavemap(slaves, check, file.path)
     # Find out if any of them are different
     unique = index_of_uniqe_element(results)
     if unique is not None:
@@ -84,42 +84,15 @@ def check_file(file, slaves):
     except SlaveEnvError, e:
         return ( e.filename, "env_error " + e.strerror )
 
-def check(slaves, walker_cls=basic_walker):
+def check(slaves, walker=basic_walker):
     """ Start checking that the files seen by 'slaves' are identical. """
-
-    walker = walker_cls()
-    walker.add([ File("DIR", "/") ])
-
-    for file in walker:
-        if file.type == "DIR":
-            dir = file
-            lists = [ (set(slave.listdir(dir)), slave) for slave in slaves ]
-            canonical_list, canonical_slave = lists[0]
-            for other_list, slave in lists[1:]:
-                if other_list != canonical_list:
-                    for file in (canonical_list - other_list):
-                        # Files which are only in canonical
-                        yield ( slave.full_path(file),
-                                "File in source but not in backup",
-                                canonical_slave.full_path(file) )
-
-                    for file in (other_list - canonical_list):
-                        # Files which are in the other list but not canonical
-                        yield ( canonical_slave.full_path(file),
-                                "File in backup but not in source",
-                                slave.full_path(file) )
-
-            for other_list, _ in lists[1:]:
-                canonical_list = canonical_list.intersection(other_list)
-            walker.add( canonical_list )
-
-        elif file.type == "REG":
-            error = check_file(file, slaves)
-            if error is not None:
-                (problem_file, problem_description) = error
-                yield ( problem_file,
-                        problem_description,
-                        slaves[0].full_path(file) )
+    for file in walker(slaves[0].listdir):
+        error = check_file(file, slaves)
+        if error is not None:
+            (problem_file, problem_description) = error
+            yield ( problem_file,
+                    problem_description,
+                    slaves[0].full_path(file) )
 
 def compare_directories(dirs):
     from proxies import LocalSlaveProxy

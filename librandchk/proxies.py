@@ -92,12 +92,12 @@ class SlaveProxy(object):
 
     def listdir(self, directory):
         """ Lists the remote directory, reuturns a list of 'File' instances."""
-        self.send("listdir", directory)
+        self.send("listdir", directory.path)
         list = self.recv_list()
         return [ File(f[0], f[1]) for f in list ]
 
     def checksum(self, file):
-        self.send("checksum", file)
+        self.send("checksum", file.path)
 
     def last_checksum(self):
         (command, checksum) = self.recv_one()
@@ -105,7 +105,7 @@ class SlaveProxy(object):
         return checksum
 
     def size(self, file):
-        self.send("size", file)
+        self.send("size", file.path)
 
     def last_size(self):
         (command, size) = self.recv_one()
