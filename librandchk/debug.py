@@ -1,3 +1,5 @@
+import os
+
 from .options import options
 
 def debug(msg):
