@@ -88,7 +88,8 @@ def _run_directory_test(directory):
     test_directories = sorted(glob(path.join(directory, "*/")))
 
     # Fake argv[0] so we can fork() properly
-    sys.argv[0] = "../randchk.py"
+    import randchk
+    sys.argv[0] = randchk.__file__.replace(".pyc", ".py")
     # Actually run the code
     actual_problems = list(compare_directories(test_directories))
 
