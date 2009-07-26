@@ -121,6 +121,16 @@ def check(slaves, walker_cls=basic_walker):
                         problem_description,
                         slaves[0].full_path(file) )
 
+        elif file.type == "LNK":
+            link_targets = [ (slave.readlink(file), slave) for slave in slaves ]
+            canonical_link, canonical_slave = link_targets[0]
+            for other_link, slave in link_targets[1:]:
+                if canonical_link != other_link:
+                    yield ( slave.full_path(file),
+                            "Symlinks do not match (%r != %r)"
+                                % (canonical_link, other_link),
+                            canonical_slave.full_path(file) )
+
 def compare_directories(dirs):
     from proxies import LocalSlaveProxy
     slaves = [ LocalSlaveProxy(dir) for dir in dirs ]

@@ -104,6 +104,12 @@ class SlaveProxy(object):
         assert command == "checksum"
         return checksum
 
+    def readlink(self, file):
+        self.send("readlink", file.path)
+        (command, link) = self.recv_one()
+        assert command == "readlink"
+        return link
+
     def size(self, file):
         self.send("size", file.path)
 

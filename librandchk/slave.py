@@ -115,6 +115,11 @@ class Slave(object):
         file = self.path(file)
         return ("checksum", checksum(file))
 
+    def READLINK_command(self, file):
+        file = self.path(file)
+        result = os.readlink(file)
+        return ("readlink", result)
+
     def SIZE_command(self, file):
         file = self.path(file)
         return ("size", file_size(file))

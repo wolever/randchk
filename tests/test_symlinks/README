@@ -1,0 +1,7 @@
+Tests that symlinks:
+ - Aren't followed (both `good_symlink`s point to bad_symlink, so they should
+   compare to equal).
+ - Are compared based on the content of their link (both `bad_link`s point to
+   different paths which do not exist).
+
+Problem: other/bad_symlink, Symlinks do not match
