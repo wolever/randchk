@@ -20,15 +20,6 @@ def helper_dir(name):
     """ Return the name of a subdirectory of this test directory. """
     return path.join(dirname(__file__), name)
 
-def test_random_file_walker():
-    # XXX: Fix this one.
-    from nose.plugins.skip import SkipTest
-    raise SkipTest()
-    testdir = helper_dir("randomly_walk_files_helper")
-    expected = set(sanewalk(testdir))
-    actual = set(random_file_walker(testdir))
-    assert_equal(expected, actual)
-
 def directory_tests():
     # Note that glob is smart about expanding slashes so this will work as
     # expected on Windows
