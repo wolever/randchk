@@ -53,10 +53,8 @@ def _run_directory_test(directory):
 
     def do_options(line):
         """ Parse an "options" line, returning nothing. """
-        import sys
         sys.argv = [ sys.argv[0] ] + line.split()
-        (_, _, new_options) = parse_options()
-        return new_options
+        parse_options()
 
     # Reset the options to default before each run
     options.clear()
@@ -72,7 +70,7 @@ def _run_directory_test(directory):
         if header == "Problem":
             expected_problems.append(do_problem(rest))
         elif header == "Options":
-            options.update(do_options(rest))
+            do_options(rest)
 
     # These are the directories which will be passed to compare_directories.
     # They are ordered alphabetically, so let's hope the "canonical"

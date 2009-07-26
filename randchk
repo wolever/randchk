@@ -29,8 +29,7 @@ def run_slave(args, help):
     return 0
 
 def run():
-    (parser, args, new_options) = parse_options()
-    options.update(new_options)
+    (parser, args) = parse_options()
 
     if options.slave:
         return run_slave(args, parser.print_help)
