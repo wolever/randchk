@@ -1,0 +1,7 @@
+This will hopefully test every code path with UTF-8 encoded Unicode characters.
+
+Problem: ∅, File in source but not in backup
+Problem: ∞, File in backup but not in source
+Problem: ☠, checksum
+Problem: ☹, Symlinks do not match
+

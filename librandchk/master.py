@@ -127,7 +127,7 @@ def check(slaves, walker_cls=basic_walker):
             for other_link, slave in link_targets[1:]:
                 if canonical_link != other_link:
                     yield ( slave.full_path(file),
-                            "Symlinks do not match (%r != %r)"
+                            "Symlinks do not match (%s != %s)"
                                 % (canonical_link, other_link),
                             canonical_slave.full_path(file) )
 
