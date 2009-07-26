@@ -4,14 +4,6 @@ from .utils import obj
 
 def parse_options():
     # Parse the command line arguments
-    parser = OptionParser(usage = "usage: %prog [options] CANONICAL CHECK...\n"
-        "\tRandomly checksum files in CANONICAL, comparing them to the same\n"
-        "\tfile in each CHECK ensuring that they are the same.")
-
-    for (name, _, short, long, help) in ordered_options:
-        parser.add_option(short, long, action="store_true",
-                          dest=name, help=help)
-
     (parsed_options, args) = parser.parse_args()
 
     new_options = obj()
@@ -26,18 +18,20 @@ def parse_options():
 
 def default_options():
     return obj((option, default) for
-               (option, default, _, _, _) in ordered_options)
+                option, default in parser.defaults.items())
 
-ordered_options = (
-#   (name, default, short, long, help)
-    ("first1024", False, "-1", "--first-1024",
-        "Only check the first 1024 bytes of each file."),
-#    ("show_progress", False, "-p", "--progress",
-#        "Show a progress bar."),
-    ("debug", False, "-d", "--debug",
-        "Show debug information."),
-    ("slave", False, "-s", "--slave",
-        "(internal option)"),
-)
+parser = OptionParser(usage = "usage: %prog [options] CANONICAL CHECK...\n"
+    "\tRandomly checksum files in CANONICAL, comparing them to the same\n"
+    "\tfile in each CHECK ensuring that they are the same.")
+option = parser.add_option
+
+option("-1", "--first-1024", action="store_true", dest="first1024",
+       help="Only check the first 1024 bytes of each file.")
+
+option("-d", "--debug", action="store_true", dest="debug",
+       help="Show debug information.")
+
+option("-s", "--slave", action="store_true", dest="slave",
+       help="Run in slave mode (internal option)")
 
 options = default_options()
