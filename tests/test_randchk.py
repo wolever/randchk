@@ -1,14 +1,14 @@
 # If this file is run through nose, .. will automatically be added to sys.path.
-from randchk import *
-from master import compare_directories
-from options import options, default_options
+from librandchk.master import compare_directories
+from librandchk.options import options, default_options, parse_options
 
-from re import match
 from glob import glob
 from nose.tools import assert_equal, nottest
 from os import path
 from os import walk as oswalk
 from os.path import dirname
+from re import match
+import sys
 
 def sanewalk(dir):
     """ A sane version of os.walk, yielding just paths. """
@@ -89,8 +89,7 @@ def _run_directory_test(directory):
     test_directories = sorted(glob(path.join(directory, "*/")))
 
     # Fake argv[0] so we can fork() properly
-    import randchk
-    sys.argv[0] = randchk.__file__.replace(".pyc", ".py")
+    sys.argv[0] = path.join(path.dirname(__file__), "..", "randchk")
     # Actually run the code
     actual_problems = list(compare_directories(test_directories))
 

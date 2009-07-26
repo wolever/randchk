@@ -1,12 +1,10 @@
 #!/usr/bin/env python
 from nose.tools import assert_equal, assert_raises
 
-from utils import shellquote, shellunquote, serialize, unserialize, \
-                  SerializationError
-
-from utils import obj
-
-from utils import randlist, assert_dir, index_of_uniqe_element
+from librandchk.utils import obj, SerializationError
+from librandchk.utils import randlist, assert_dir, index_of_uniqe_element
+from librandchk.utils import serialize, unserialize
+from librandchk.utils import shellquote, shellunquote
 
 def test_shellquote():
     tests = [
