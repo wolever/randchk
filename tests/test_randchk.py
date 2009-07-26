@@ -1,6 +1,6 @@
 # If this file is run through nose, .. will automatically be added to sys.path.
 from randchk import *
-import randchk
+from options import options, default_options
 
 from re import match
 from glob import glob
@@ -67,7 +67,8 @@ def _run_directory_test(directory):
         return new_options
 
     # Reset the options to default before each run
-    randchk.options = default_options()
+    options.clear()
+    options.update(default_options())
 
     expected_problems = []
     for line in readme.splitlines():
@@ -79,7 +80,7 @@ def _run_directory_test(directory):
         if header == "Problem":
             expected_problems.append(do_problem(rest))
         elif header == "Options":
-            randchk.options.update(do_options(rest))
+            options.update(do_options(rest))
 
     # These are the directories which will be passed to compare_directories.
     # They are ordered alphabetically, so let's hope the "canonical"

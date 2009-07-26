@@ -10,6 +10,7 @@ from optparse import OptionParser
 
 from utils import obj, index_of_uniqe_element
 from walkers import basic_walker
+from options import options, ordered_options
 
 def debug(msg):
     if not options.debug:
@@ -120,32 +121,6 @@ def run_slave(args, help):
     Slave(args[0]).run()
     return 0
 
-def run():
-    (parser, args, new_options) = parse_options()
-    options.update(new_options)
-
-    if options.slave:
-        return run_slave(args, parser.print_help)
-    else:
-        return run_master(args, parser.print_help)
-
-def default_options():
-    return obj((option, default) for
-               (option, default, _, _, _) in ordered_options)
-
-ordered_options = (
-#   (name, default, short, long, help)
-    ("first1024", False, "-1", "--first-1024",
-        "Only check the first 1024 bytes of each file."),
-#    ("show_progress", False, "-p", "--progress",
-#        "Show a progress bar."),
-    ("debug", False, "-d", "--debug",
-        "Show debug information."),
-    ("slave", False, "-s", "--slave",
-        "(internal option)"),
-)
-options = default_options()
-
 def parse_options():
     # Parse the command line arguments
     parser = OptionParser(usage = "usage: %prog [options] CANONICAL CHECK...\n"
@@ -167,6 +142,17 @@ def parse_options():
             new_options[option] = new_value
 
     return (parser, args, new_options)
+
+def run():
+    (parser, args, new_options) = parse_options()
+    options.update(new_options)
+    debug("OPTIONS %d UPDATING WITH: %r" %( id(options), new_options ))
+    debug("OPTIONS ARE: %r" % ( options ))
+
+    if options.slave:
+        return run_slave(args, parser.print_help)
+    else:
+        return run_master(args, parser.print_help)
 
 if __name__ == "__main__":
     sys.exit(run())

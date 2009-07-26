@@ -18,6 +18,10 @@ def checksum(file):
     with open(file) as f:
         sum = md5()
 
+        if '--first-1024' in sys.argv:
+            debug("STUFF: %r" %( options ))
+            debug("OPTIONS: %s" %( id(options) ))
+
         if options.first1024:
             # Only do one read
             data = f.read(1024)
@@ -116,9 +120,3 @@ class Slave(object):
 
     def HELLO_command(self):
         return ("hello", )
-
-if __name__ == "__main__":
-    debug("Child started")
-    assert_dir(sys.argv[1])
-    s = Slave(sys.argv[1])
-    s.run()
