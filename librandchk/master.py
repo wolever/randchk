@@ -36,7 +36,7 @@ class File(object):
 
     def __eq__(self, other):
         if not isinstance(other, File):
-            return false
+            return False
         return other.type == self.type and other.path == self.path
 
     def __repr__(self):
