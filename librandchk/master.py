@@ -16,7 +16,7 @@ class File(object):
 
     def __init__(self, type, path):
         if type not in File.types:
-            raise Exception("Invalid type: %r" %(type))
+            raise Exception("Invalid type: %r (path: %r)" %(type, path))
         self._hashcode = None
         self._type = type
         self._path = path

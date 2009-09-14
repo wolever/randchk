@@ -1,1 +1,3 @@
 * Make the walker, err, random
+* Print a summary of errors at the end of the run
+* Cache the last N debug statements, then print them if there is an error
