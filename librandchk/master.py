@@ -122,7 +122,8 @@ def check(slaves, walker_cls=basic_walker):
                         slaves[0].full_path(file) )
 
         elif file.type == "LNK":
-            link_targets = [ (slave.readlink(file), slave) for slave in slaves ]
+            link_targets = [ (slave.readlink(file), slave)
+                             for slave in slaves ]
             canonical_link, canonical_slave = link_targets[0]
             for other_link, slave in link_targets[1:]:
                 if canonical_link != other_link:

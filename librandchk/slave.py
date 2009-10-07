@@ -49,7 +49,7 @@ def file_type(path):
         stat.S_IFBLK: "BLK",
         stat.S_IFCHR: "CHR",
         stat.S_IFIFO: "FIFO",
-        stat.S_IFSOCK:"SOCK",
+        stat.S_IFSOCK: "SOCK",
     }
 
     statinfo = os.lstat(path)[stat.ST_MODE]
@@ -82,7 +82,7 @@ class Slave(object):
                 return
 
             (command, args) = (line[0], line[1:])
-            
+
             if command == "bye":
                 debug("Got 'bye' - going down...")
                 return

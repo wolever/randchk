@@ -20,7 +20,8 @@ class SlaveEnvError(Exception):
 
 
 class SlaveProxy(object):
-    def __init__(self, base_path, instream=sys.stdin, outstream=sys.stdout, pid=-1):
+    def __init__(self, base_path, instream=sys.stdin,
+                 outstream=sys.stdout, pid=-1):
         self.base_path = base_path
         self.instream = instream
         self.outstream = outstream
@@ -150,4 +151,5 @@ class LocalSlaveProxy(SlaveProxy):
         self.child.stdin.close()
         self.child.stdout.close()
         self.child.wait()
-        debug("Done: %d exited with %s" %(self.child.pid, self.child.returncode))
+        debug("Done: child %d exited with status %s"
+              %(self.child.pid, self.child.returncode))
