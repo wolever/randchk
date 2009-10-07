@@ -7,7 +7,7 @@ import sys
 import os
 
 from .debug import debug
-from .master import File
+from .File import File
 from .utils import serialize, unserialize, randlist, index_of_uniqe_element
 
 class SlaveEnvError(Exception):

@@ -3,44 +3,8 @@ from __future__ import division
 from .options import options
 from .utils import index_of_uniqe_element
 from .walkers import basic_walker
-
-class File(object):
-    """ Represents the relative path to a file.
-        In other words, a File does not know which slave it is associated with.
-        Or, a File represents a file which should be common to all slaves. """
-
-    # We could have a lot of Files, so define which slots we'll be using.
-    __slots__ = [ '_type', '_path', '_hashcode' ]
-
-    types = [ "REG", "DIR", "LNK", "BLK", "CHR", "FIFO", "SOCK" ]
-
-    def __init__(self, type, path):
-        if type not in File.types:
-            raise Exception("Invalid type: %r (path: %r)" %(type, path))
-        self._hashcode = None
-        self._type = type
-        self._path = path
-
-    @property
-    def type(self):
-        return self._type
-
-    @property
-    def path(self):
-        return self._path
-
-    def __hash__(self):
-        if self._hashcode is None:
-            self._hashcode = ( self.type, self.path ).__hash__()
-        return self._hashcode
-
-    def __eq__(self, other):
-        if not isinstance(other, File):
-            return False
-        return other.type == self.type and other.path == self.path
-
-    def __repr__(self):
-        return "<File path=%r type=%r>" %(self.path, self.type)
+from .File import File
+from .proxies import LocalSlaveProxy, SlaveEnvError
 
 def slavemap(slaves, cmd, *args):
     for slave in slaves:
@@ -77,8 +41,6 @@ def _check_file(file, slaves):
 def check_file(file, slaves):
     """ Check 'file' across 'slaves'.
         Returns a tuple '(file, description)' if any file causes an error. """
-    from proxies import SlaveEnvError
-
     try:
         return _check_file(file, slaves)
     except SlaveEnvError, e:
@@ -93,9 +55,35 @@ def check(slaves, walker_cls=basic_walker):
     for file in walker:
         if file.type == "DIR":
             dir = file
-            lists = [ (set(slave.listdir(dir)), slave) for slave in slaves ]
-            canonical_list, canonical_slave = lists[0]
-            for other_list, slave in lists[1:]:
+            file_lists = []
+            
+            # Ask all the slaves to list this directory
+            for slave in slaves:
+                try:
+                    file_list = slave.listdir(dir)
+                    file_lists.append(( set(file_list), slave ))
+                except SlaveEnvError, e:
+                    # If any error out (for example, because the directory
+                    # is not executable), yield the error and move on
+                    yield ( e.filename,
+                            "env_error " + e.strerror,
+                            slaves[0].full_path(dir))
+
+                    # If the slave that errored out is the canonical slave...
+                    if slave is slaves[0]:
+                        # ... then don't bother with checking the rest of the
+                        # slaves. They won't tell us anything interesting.
+                        break
+
+            # If the canonical slave errored out...
+            if not file_lists:
+                # ... then don't bother checking the rest. Just bail out and
+                # start checking the next file.
+                continue
+
+            # Otherwise, continue on with the checking.
+            canonical_list, canonical_slave = file_lists[0]
+            for other_list, slave in file_lists[1:]:
                 if other_list != canonical_list:
                     for file in (canonical_list - other_list):
                         # Files which are only in canonical
@@ -109,9 +97,21 @@ def check(slaves, walker_cls=basic_walker):
                                 "File in backup but not in source",
                                 slave.full_path(file) )
 
-            for other_list, _ in lists[1:]:
-                canonical_list = canonical_list.intersection(other_list)
-            walker.add( canonical_list )
+            # Remove from the canonical list any files which appear in none
+            # of the other slaves. For example, if the canonical list
+            # if [ a, b, c ], and the other slaves are [ [ a, b ], [ b ] ],
+            # we still want to check 'a' (because it is in at least one
+            # of the slaves), but since none of the slaves have 'c', there is
+            # no point in checking it again.
+
+            # This is done by first building a union of all the other
+            # file lists...
+            other_lists_union = set()
+            for other_list, _ in file_lists[1:]:
+                other_lists_union.update(other_list)
+            
+            # ... then intersecting that with the canonical list.
+            walker.add(canonical_list.intersection(other_lists_union))
 
         elif file.type == "REG":
             error = check_file(file, slaves)
@@ -133,7 +133,6 @@ def check(slaves, walker_cls=basic_walker):
                             canonical_slave.full_path(file) )
 
 def compare_directories(dirs):
-    from proxies import LocalSlaveProxy
     slaves = [ LocalSlaveProxy(dir) for dir in dirs ]
 
     for problem in check(slaves):

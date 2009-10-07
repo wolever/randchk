@@ -1,4 +1,4 @@
-from librandchk.master import File
+from librandchk.File import File
 
 from nose.tools import raises, assert_equal, assert_not_equal
 
