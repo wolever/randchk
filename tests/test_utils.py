@@ -12,6 +12,8 @@ def test_shellquote():
         [ 'with space', '"with space"' ],
         [ 'with"quote', r'with\"quote' ],
         [ 'quote" space', r'"quote\" space"' ],
+        [ "with'quote", '"with\'quote"' ],
+        [ "with'quotes'", '"with\'quotes\'"' ],
     ]
 
     for test, expected in tests:

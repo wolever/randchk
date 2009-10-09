@@ -45,8 +45,8 @@ def index_of_uniqe_element(elements):
     return None
 
 def shellquote(s):
-    s = s.replace('"', r'\"') # Escape any single-quotes
-    if re.search(r"\s", s):
+    s = s.replace('"', r'\"') # Escape any quotes
+    if re.search(r"[\s']", s):
         # Only quote the string if it contains whitespace
         s = '"' + s + '"'
     return s
