@@ -7,6 +7,7 @@ import sys
 import os
 
 from .debug import debug
+from .exceptions import FileIntegrityError
 from .File import File
 from .utils import serialize, unserialize, randlist, index_of_uniqe_element
 
@@ -61,6 +62,10 @@ class SlaveProxy(object):
         if result and result[0] == "ENVERROR":
             (_, file, strerror) = result
             raise SlaveEnvError(self, file, strerror)
+
+        if result and result[0] == "INTERROR":
+            (_, file, strerror) = result
+            raise FileIntegrityError(file, strerror)
 
         return result
 

@@ -1,5 +1,6 @@
 from __future__ import division
 
+from .exceptions import FileIntegrityError
 from .options import options
 from .utils import index_of_uniqe_element
 from .walkers import basic_walker
@@ -45,6 +46,8 @@ def check_file(file, slaves):
         return _check_file(file, slaves)
     except SlaveEnvError, e:
         return ( e.filename, "env_error " + e.strerror )
+    except FileIntegrityError, e:
+        return ( e.filename, "Integrity error: " + e.strerror )
 
 def check(slaves, walker_cls=basic_walker):
     """ Start checking that the files seen by 'slaves' are identical. """

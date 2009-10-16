@@ -30,6 +30,16 @@ option("--first-1024", action="store_true",
        dest="first1024", default=False,
        help="Only check the first 1024 bytes of each file.")
 
+option("--no-zero-check", action="store_true",
+       dest="no_zero_check", default=False,
+       help="By default, randchk will throw an error if the first 1024 " +
+            "bytes of a file are '\\0'. --no-zero-check disables this " +
+            "behaviour.")
+
+#option("--verbose", "-v", action="store_true",
+#       dest="verbose", default=False,
+#       help="Be verbose.")
+
 option("--debug", action="store_true",
        dest="debug", default=False,
        help="Show debug information.")
