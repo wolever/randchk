@@ -52,22 +52,11 @@ class SlaveProxy(object):
             if line == "": break
 
             # Append the line
-            debug("%d> %s" %(self.pid, line))
+            debug("%d>master %r" %(self.pid, line))
             lines.append(line)
 
-        # Finally, unserialize the result
-        result = unserialize("\n".join(lines))
-
-        # Result may be empty if, for example, it's an empty directory
-        if result and result[0] == "ENVERROR":
-            (_, file, strerror) = result
-            raise SlaveEnvError(self, file, strerror)
-
-        if result and result[0] == "INTERROR":
-            (_, file, strerror) = result
-            raise FileIntegrityError(file, strerror)
-
-        return result
+        # Finally, unserialize and return the result
+        return unserialize("\n".join(lines))
 
     def recv_list(self):
         result = self.recv()
@@ -81,13 +70,12 @@ class SlaveProxy(object):
 
     def recv_one(self):
         result = self.recv()
-        debug(result)
         assert type(result) != list
         return result
 
     def send(self, *command):
+        debug("master>%s %r" %(self.pid, command))
         to_send = serialize(tuple(command))
-        debug("%s< %s" %(self.pid, to_send))
         self.last_cmd = to_send
         self.outstream.write(to_send + "\n")
         self.outstream.flush()
@@ -100,29 +88,21 @@ class SlaveProxy(object):
         """ Lists the remote directory, reuturns a list of 'File' instances."""
         self.send("listdir", directory.path)
         list = self.recv_list()
+        if list and list[0] and 'ERROR' in list[0][0]:
+            return list[0][1:]
         return [ File(f[0], f[1]) for f in list ]
 
     def checksum(self, file):
         self.send("checksum", file.path)
 
-    def last_checksum(self):
-        (command, checksum) = self.recv_one()
-        assert command == "checksum"
-        return checksum
-
     def readlink(self, file):
         self.send("readlink", file.path)
         (command, link) = self.recv_one()
-        assert command == "readlink"
+        assert command == "readlink", command
         return link
 
     def size(self, file):
         self.send("size", file.path)
-
-    def last_size(self):
-        (command, size) = self.recv_one()
-        assert command == "size"
-        return size
 
     def shutdown(self):
         # Perform a graceful shutdown

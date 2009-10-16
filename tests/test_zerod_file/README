@@ -1,3 +1,4 @@
 Test that an error is thrown if a file's first 1024 bytes are 0.
 
 Problem: canonical/zero_file, zero
+Problem: other/zero_file, zero

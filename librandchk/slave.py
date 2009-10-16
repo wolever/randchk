@@ -28,7 +28,8 @@ def checksum(file):
                 # If any of the bytes we read are nonzero, assume that the
                 # file isn't entirely zeros... But if all 1024 bytes ARE
                 # zero, then something could be bad.
-                if not any(imap(ord, data)):
+                # Also, don't bother to run this check if the file is empty.
+                if data and not any(imap(ord, data)):
                     raise FileIntegrityError(file, "file appears zero'd")
             return data
 

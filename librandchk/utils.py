@@ -42,6 +42,7 @@ def index_of_uniqe_element(elements):
 
         if element != first_element:
             return id
+
     return None
 
 def shellquote(s):

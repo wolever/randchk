@@ -1,3 +1,6 @@
 * Make the walker, err, random
 * Print a summary of errors at the end of the run
 * Cache the last N debug statements, then print them if there is an error
+* Only compare files when their mtime is <= (ie, don't check files which are
+  newer on the canonical - they will most likely be different)
+* Clean up the error handling, especially in listdir

@@ -11,43 +11,59 @@ def slavemap(slaves, cmd, *args):
     for slave in slaves:
         getattr(slave, cmd)(*args)
 
-    return [ getattr(slave, "last_" + cmd)() for slave in slaves ]
+    return [ slave.recv_one() for slave in slaves ]
 
 def run_check(slaves, check, file):
     """ Run a check on slaves and return tuple with an error, or None. """
     # Run the check across the slaves
     results = slavemap(slaves, check, file)
+
+    # Check to see if any of the results were an error
+    results_without_error = []
+    for result in results:
+        cmd = result[0]
+        if "ERROR" in cmd:
+            yield result[1:]
+            continue
+
+        assert cmd == check, "Unexpected command: %r" %(cmd, )
+        results_without_error.append(result[1])
+
+    # Check to make sure there are at least two results which *didn't* error out
+    if len(results_without_error) < 2:
+        return
+
+    # Ignore the error'd results
+    results = results_without_error
+
     # Find out if any of them are different
     unique = index_of_uniqe_element(results)
     if unique is not None:
         # Figure out which file caused the problem
         problem_file = slaves[unique].full_path(file)
-        return ( problem_file,
-                 "%s %s != %s" %(check, results[unique], results[0]) )
-    # If there is no error, we're done!
-    return None
+        yield ( problem_file,
+                "%s %s != %s" %(check, results[unique], results[0]) )
+    # If there is no error... We're done!
 
-def _check_file(file, slaves):
+def check_file(file, slaves):
+    """ Check 'file' across 'slaves'.
+        Returns a tuple '(file, description)' if any file causes an error. """
     # Compare 'file' across the slaves
     if file.type != "REG":
         # Ignore non-regular files... For now.
         return
 
+    got_error = False
     for check in ("size", "checksum"):
-        error = run_check(slaves, check, file)
-        if error: return error
+        for error in run_check(slaves, check, file):
+            got_error = True
+            yield error
 
-    return None
+        # If we get an error, don't continue on to the next check
+        if got_error:
+            break
 
-def check_file(file, slaves):
-    """ Check 'file' across 'slaves'.
-        Returns a tuple '(file, description)' if any file causes an error. """
-    try:
-        return _check_file(file, slaves)
-    except SlaveEnvError, e:
-        return ( e.filename, "env_error " + e.strerror )
-    except FileIntegrityError, e:
-        return ( e.filename, "Integrity error: " + e.strerror )
+    # All done!
 
 def check(slaves, walker_cls=basic_walker):
     """ Start checking that the files seen by 'slaves' are identical. """
@@ -62,14 +78,15 @@ def check(slaves, walker_cls=basic_walker):
             
             # Ask all the slaves to list this directory
             for slave in slaves:
-                try:
-                    file_list = slave.listdir(dir)
-                    file_lists.append(( set(file_list), slave ))
-                except SlaveEnvError, e:
+                file_list = slave.listdir(dir)
+                # Note: I'm using tuples to signal 'error'... Not great,
+                #       but it's on the list of things to fix.
+                if isinstance(file_list, tuple):
+                    error = file_list
                     # If any error out (for example, because the directory
                     # is not executable), yield the error and move on
-                    yield ( e.filename,
-                            "env_error " + e.strerror,
+                    yield ( error[0],
+                            error[1],
                             slaves[0].full_path(dir))
 
                     # If the slave that errored out is the canonical slave...
@@ -77,6 +94,8 @@ def check(slaves, walker_cls=basic_walker):
                         # ... then don't bother with checking the rest of the
                         # slaves. They won't tell us anything interesting.
                         break
+
+                file_lists.append(( set(file_list), slave ))
 
             # If the canonical slave errored out...
             if not file_lists:
@@ -117,8 +136,7 @@ def check(slaves, walker_cls=basic_walker):
             walker.add(canonical_list.intersection(other_lists_union))
 
         elif file.type == "REG":
-            error = check_file(file, slaves)
-            if error is not None:
+            for error in check_file(file, slaves):
                 (problem_file, problem_description) = error
                 yield ( problem_file,
                         problem_description,

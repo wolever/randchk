@@ -92,7 +92,9 @@ def _run_directory_test(directory):
         for (eid, (e_file, e_description)) in enumerate(expected_problems):
             # We only check that the problem file *ends* with the expected file
             # (makes life a bit easier, I think)
-            if not problem_file.endswith(e_file): continue
+            if not problem_file.endswith(e_file):
+                continue
+
             assert e_description in problem_description, \
                    "Expected description, %r, not in actual description, %r." \
                     %(e_description, problem_description)
@@ -100,7 +102,7 @@ def _run_directory_test(directory):
             found = True
             break
 
-        assert found, "Unexpected problem encountered: %s: %s" \
+        assert found, "Unexpected problem encountered: %s: %r" \
                       %(problem_file, problem_description)
 
     # By now the expected_problems list should be empty
