@@ -36,9 +36,9 @@ option("--no-zero-check", action="store_true",
             "bytes of a file are '\\0'. --no-zero-check disables this " +
             "behaviour.")
 
-#option("--verbose", "-v", action="store_true",
-#       dest="verbose", default=False,
-#       help="Be verbose.")
+option("--verbose", "-v", action="store_true",
+       dest="verbose", default=False,
+       help="Be verbose.")
 
 option("--debug", action="store_true",
        dest="debug", default=False,

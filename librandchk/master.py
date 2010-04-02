@@ -3,7 +3,7 @@ from __future__ import division
 from .exceptions import FileIntegrityError
 from .options import options
 from .utils import index_of_uniqe_element
-from .walkers import basic_walker
+from .walkers import random_walker
 from .File import File
 from .proxies import LocalSlaveProxy, SlaveEnvError
 
@@ -65,13 +65,16 @@ def check_file(file, slaves):
 
     # All done!
 
-def check(slaves, walker_cls=basic_walker):
+def check(slaves, walker_cls=random_walker):
     """ Start checking that the files seen by 'slaves' are identical. """
 
     walker = walker_cls()
     walker.add([ File("DIR", "/") ])
 
     for file in walker:
+        if options.verbose:
+            print file.path.lstrip('/')
+
         if file.type == "DIR":
             dir = file
             file_lists = []
